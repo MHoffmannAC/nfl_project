@@ -9,11 +9,12 @@ import os
 
 os.environ.pop('HF_TOKEN', None)
 
-hf_model = "meta-llama/Llama-3.2-3B-Instruct"
+#hf_model = "meta-llama/Llama-3.2-3B-Instruct"
+hf_model = "mistralai/Mistral-7B-Instruct-v0.3"
 llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
 
 # prompt
-template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). If you don't know the answer, just say that you don't know.
+template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). If you don't know the answer based on the provided context, just say that you don't know the answer.
 
 Previous conversation:
 {chat_history}
