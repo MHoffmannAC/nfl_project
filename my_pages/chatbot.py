@@ -5,11 +5,12 @@ from langchain.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
+import os
 
-from keys import HF_TOKEN
+os.environ.pop('HF_TOKEN', None)
 
 hf_model = "meta-llama/Llama-3.2-3B-Instruct"
-llm = HuggingFaceEndpoint(repo_id=hf_model)
+llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
 
 # prompt
 template = """You are a nice chatbot having a conversation with a human about the NFL. Keep your answers short and succinct. Only respond to the human's question without including further conversations that are not explicitly part of the chat history. In case you need to revise your answer, just provide the final response. Please be aware, humans like to change topics quickly. In that case just ignore your previous memory of the conversation. Please do not inform the human when you ignore the previous memory or similar technical details. Just provide the answer please.
@@ -141,7 +142,7 @@ if st.session_state.selected_topic:
 
     # Fixed input field at the bottom
     st.markdown('<div class="fixed-input">', unsafe_allow_html=True)
-    prompt = st.chat_input("Let's discuss some NFL news!")
+    prompt = st.chat_input(st.session_state.input_message)
     st.markdown('</div>', unsafe_allow_html=True)
 
     if prompt:
