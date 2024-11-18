@@ -50,7 +50,43 @@ memory = init_memory(llm)
 
 ##### streamlit #####
 
-st.title("NFLBot: know everything about the NFL")
+# Apply custom CSS
+st.markdown(
+    """
+    <style>
+    .chat-container {
+        max-height: 60vh;
+        overflow-y: auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }
+    .st-chat-message {
+        background-color: #ffffff !important;  /* Resetting message background */
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 5px;
+    }
+    .stTextArea textarea {
+        width: 100%;
+        height: 50px;
+    }
+    .fixed-input {
+        position: fixed;
+        bottom: 10px;
+        left: 0;
+        width: 100%;
+        background-color: #fff;
+        padding: 10px;
+        border-top: 1px solid #ccc;
+    }
+    </style>
+    """, 
+    unsafe_allow_html=True
+)
+
+st.title("NFLBot: Know Everything About the NFL")
 
 if "selected_topic" not in st.session_state:
     st.session_state.selected_topic = False
@@ -60,10 +96,14 @@ if "messages" not in st.session_state:
         {"role": "assistant", "content": "Welcome! Please choose a topic to discuss:"}
     ]
 
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Display chat messages in a scrollable container
+st.divider()
+with st.container():
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Topic selection as a chat message
 def display_topic_buttons():
@@ -73,7 +113,7 @@ def display_topic_buttons():
         if st.button("Rule Book"):
             with st.spinner("Updating my rules knowledge, please wait."):
                 st.session_state.vector_db = load_vector_db(faiss_folder_1)
-                st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in! (Type 'Change topic' to select a different topic)"})
+                st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
                 st.session_state.selected_topic = True
                 st.session_state.input_message = "Let's discuss some NFL rules!"
 
@@ -81,9 +121,10 @@ def display_topic_buttons():
         if st.button("Glossary"):
             with st.spinner("Studying glossary, please wait."):
                 st.session_state.vector_db = load_vector_db(faiss_folder_2)
-                st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in! (Type 'Change topic' to select a different topic)"})
+                st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
                 st.session_state.selected_topic = True
                 st.session_state.input_message = "Let's discuss some NFL glossary!"
+    st.write("")
 
 if not st.session_state.selected_topic:
     display_topic_buttons()
@@ -98,8 +139,12 @@ if st.session_state.selected_topic:
                                                   verbose=1,
                                                   combine_docs_chain_kwargs={"prompt": prompt})
 
-    # React to user input
-    if prompt := st.chat_input(st.session_state.input_message):
+    # Fixed input field at the bottom
+    st.markdown('<div class="fixed-input">', unsafe_allow_html=True)
+    prompt = st.chat_input("Let's discuss some NFL news!")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if prompt:
         if prompt.lower() == "change topic":
             st.session_state.selected_topic = False
             st.session_state.messages.append({"role": "assistant", "content": "Sure! Let's change the topic. Please choose a new topic:"})
