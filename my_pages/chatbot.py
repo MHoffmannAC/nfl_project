@@ -13,7 +13,7 @@ hf_model = "meta-llama/Llama-3.2-3B-Instruct"
 llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
 
 # prompt
-template = """You are a nice chatbot having a conversation with a human about the NFL. Keep your answers short and succinct. Only respond to the human's question without including further conversations that are not explicitly part of the chat history. In case you need to revise your answer, just provide the final response. Please do not inform the human when you ignore the previous memory or similar technical details. Give only replies based on the provided extracted parts of long documents (the context). If you don't know the answer, just say that you don't know and literally suggest a "topic change".
+template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). If you don't know the answer, just say that you don't know.
 
 Previous conversation:
 {chat_history}
