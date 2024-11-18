@@ -13,7 +13,7 @@ hf_model = "meta-llama/Llama-3.2-3B-Instruct"
 llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
 
 # prompt
-template = """You are a nice chatbot having a conversation with a human about the NFL. Keep your answers short and succinct. Only respond to the human's question without including further conversations that are not explicitly part of the chat history. In case you need to revise your answer, just provide the final response. Please be aware, humans like to change topics quickly. In that case just ignore your previous memory of the conversation. Please do not inform the human when you ignore the previous memory or similar technical details. Just provide the answer please.
+template = """You are a nice chatbot having a conversation with a human about the NFL. Keep your answers short and succinct. Only respond to the human's question without including further conversations that are not explicitly part of the chat history. In case you need to revise your answer, just provide the final response. Please do not inform the human when you ignore the previous memory or similar technical details. Give only replies based on the provided extracted parts of long documents (the context). If you don't know the answer, just say that you don't know and literally suggest a "topic change".
 
 Previous conversation:
 {chat_history}
@@ -31,6 +31,7 @@ prompt = PromptTemplate(template=template,
 embedding_model = "sentence-transformers/all-MiniLM-l6-v2"
 faiss_folder_1 = "./ressources/chatbot/faiss_rulebook"
 faiss_folder_2 = "./ressources/chatbot/faiss_glossary"
+faiss_folder_3 = "./ressources/chatbot/faiss_news"
 
 @st.cache_resource(show_spinner=False)
 def load_vector_db(folder_path):
@@ -83,7 +84,7 @@ st.markdown(
         border-top: 1px solid #ccc;
     }
     div.stButton > button:first-child {
-        background-color: #007BFF; /* Button color */
+        background-color: #00093a; /* Button color */
         color: white; /* Text color */
         font-size: 16px;
         font-weight: bold;
@@ -122,11 +123,11 @@ with st.container():
 
 # Topic selection as a chat message
 def display_topic_buttons():
-    col1, col2, col3 = st.columns([1, 1, 6])
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 6])
 
     with col1:
         if st.button("Rule Book"):
-            with col3:
+            with col4:
                 with st.spinner("Updating my rules knowledge, please wait."):
                     st.session_state.vector_db = load_vector_db(faiss_folder_1)
             st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
@@ -135,12 +136,22 @@ def display_topic_buttons():
 
     with col2:
         if st.button("Glossary"):
-            with col3:
+            with col4:
                 with st.spinner("Studying glossary, please wait."):
                     st.session_state.vector_db = load_vector_db(faiss_folder_2)
             st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
             st.session_state.selected_topic = True
             st.session_state.input_message = "Let's discuss some NFL glossary!"
+
+    with col3:
+        if st.button("News"):
+            with col4:
+                with st.spinner("Studying latest news, please wait."):
+                    st.session_state.vector_db = load_vector_db(faiss_folder_3)
+            st.session_state.messages.append({"role": "assistant", "content": "You've selected *News*. Let's dive in!"})
+            st.session_state.selected_topic = True
+            st.session_state.input_message = "Let's discuss some NFL news!"
+
     st.write("")
 
 if not st.session_state.selected_topic:
@@ -152,8 +163,8 @@ if st.session_state.selected_topic:
     chain = ConversationalRetrievalChain.from_llm(llm,
                                                   retriever=retriever,
                                                   memory=memory,
-                                                  return_source_documents=True,
-                                                  verbose=1,
+                                                  return_source_documents=False,
+                                                  verbose=0,
                                                   combine_docs_chain_kwargs={"prompt": prompt},
                                                   response_if_no_docs_found="Sorry, I don't know that. Maybe try to change the chat topic.")
 
