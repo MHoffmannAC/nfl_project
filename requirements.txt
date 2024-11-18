@@ -2,6 +2,7 @@ beautifulsoup4==4.12.3
 huggingface-hub==0.26.2
 ipykernel==6.29.5
 ipython==8.29.0
+faiss-cpu==1.9.0
 langchain==0.3.7
 langchain-community==0.3.7
 langchain-core==0.3.18

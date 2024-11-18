@@ -78,9 +78,23 @@ st.markdown(
         bottom: 10px;
         left: 0;
         width: 100%;
-        background-color: #fff;
+        background-color: #00093a;
         padding: 10px;
         border-top: 1px solid #ccc;
+    }
+    div.stButton > button:first-child {
+        background-color: #007BFF; /* Button color */
+        color: white; /* Text color */
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        padding: 8px 16px;
+        margin: 5px;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+        color: white;
     }
     </style>
     """, 
@@ -108,7 +122,7 @@ with st.container():
 
 # Topic selection as a chat message
 def display_topic_buttons():
-    col1, col2 = st.columns(2)
+    col1, col2, _ = st.columns([1, 1, 6])
 
     with col1:
         if st.button("Rule Book"):
