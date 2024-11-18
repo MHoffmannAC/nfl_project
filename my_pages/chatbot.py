@@ -122,23 +122,25 @@ with st.container():
 
 # Topic selection as a chat message
 def display_topic_buttons():
-    col1, col2, _ = st.columns([1, 1, 6])
+    col1, col2, col3 = st.columns([1, 1, 6])
 
     with col1:
         if st.button("Rule Book"):
-            with st.spinner("Updating my rules knowledge, please wait."):
-                st.session_state.vector_db = load_vector_db(faiss_folder_1)
-                st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
-                st.session_state.selected_topic = True
-                st.session_state.input_message = "Let's discuss some NFL rules!"
+            with col3:
+                with st.spinner("Updating my rules knowledge, please wait."):
+                    st.session_state.vector_db = load_vector_db(faiss_folder_1)
+            st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
+            st.session_state.selected_topic = True
+            st.session_state.input_message = "Let's discuss some NFL rules!"
 
     with col2:
         if st.button("Glossary"):
-            with st.spinner("Studying glossary, please wait."):
-                st.session_state.vector_db = load_vector_db(faiss_folder_2)
-                st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
-                st.session_state.selected_topic = True
-                st.session_state.input_message = "Let's discuss some NFL glossary!"
+            with col3:
+                with st.spinner("Studying glossary, please wait."):
+                    st.session_state.vector_db = load_vector_db(faiss_folder_2)
+            st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
+            st.session_state.selected_topic = True
+            st.session_state.input_message = "Let's discuss some NFL glossary!"
     st.write("")
 
 if not st.session_state.selected_topic:
