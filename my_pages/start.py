@@ -1,0 +1,8 @@
+import streamlit as st
+
+st.title("Welcome to the NFL Game Analysis App!")
+st.write("""
+Use the sidebar to navigate to different sections of the app.
+- **NFLBot**: Discuss the latest NFL news with the well informed NFLBot.
+- More features coming soon!
+""")
