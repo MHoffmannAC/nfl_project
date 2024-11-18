@@ -152,7 +152,8 @@ if st.session_state.selected_topic:
                                                   memory=memory,
                                                   return_source_documents=True,
                                                   verbose=1,
-                                                  combine_docs_chain_kwargs={"prompt": prompt})
+                                                  combine_docs_chain_kwargs={"prompt": prompt},
+                                                  response_if_no_docs_found="Sorry, I don't know that. Maybe try to change the chat topic.")
 
     # Fixed input field at the bottom
     st.markdown('<div class="fixed-input">', unsafe_allow_html=True)
