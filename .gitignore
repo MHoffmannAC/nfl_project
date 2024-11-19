@@ -8,4 +8,5 @@ ressources/chatbot/sources/
 ressources/chatbot/prepare_chatbot.ipynb
 test.ipynb
 my_pages/unused/
+.streamlit
 .streamlit/secrets.toml

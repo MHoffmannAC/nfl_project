@@ -1,20 +1,24 @@
 import streamlit as st
 
+from langchain_groq import ChatGroq
+
 from langchain_huggingface import HuggingFaceEndpoint, HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-import os
 
-os.environ.pop('HF_TOKEN', None)
-
+#import os
+#os.environ.pop('HF_TOKEN', None)
 #hf_model = "meta-llama/Llama-3.2-3B-Instruct"
-hf_model = "mistralai/Mistral-7B-Instruct-v0.3"
-llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
+#hf_model = "mistralai/Mistral-7B-Instruct-v0.3"
+#llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
+llm = ChatGroq(temperature=0,
+               groq_api_key=st.secrets['GROQ_TOKEN'],
+               model_name="mixtral-8x7b-32768")
 
 # prompt
-template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). If you don't know the answer based on the provided context, just say that you don't know the answer.
+template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). No need to mention explicitly something like "Based on the provided context". If you don't know the answer based on the provided context, just say "I don't know the answer.".
 
 Previous conversation:
 {chat_history}
@@ -30,9 +34,9 @@ prompt = PromptTemplate(template=template,
 
 # embeddings
 embedding_model = "sentence-transformers/all-MiniLM-l6-v2"
-faiss_folder_1 = "./ressources/chatbot/faiss_rulebook"
-faiss_folder_2 = "./ressources/chatbot/faiss_glossary"
-faiss_folder_3 = "./ressources/chatbot/faiss_news"
+faiss_rulebook = "./ressources/chatbot/faiss_rulebook"
+faiss_glossary = "./ressources/chatbot/faiss_glossary"
+faiss_news = "./ressources/chatbot/faiss_news"
 
 @st.cache_resource(show_spinner=False)
 def load_vector_db(folder_path):
@@ -64,6 +68,9 @@ st.markdown(
         border: 1px solid #ccc;
         border-radius: 10px;
         background-color: #f9f9f9;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
     }
     .st-chat-message {
         background-color: #ffffff !important;  /* Resetting message background */
@@ -76,13 +83,13 @@ st.markdown(
         height: 50px;
     }
     .fixed-input {
-        position: fixed;
         bottom: 10px;
         left: 0;
         width: 100%;
         background-color: #00093a;
         padding: 10px;
         border-top: 1px solid #ccc;
+        flex-shrink: 0;
     }
     div.stButton > button:first-child {
         background-color: #00093a; /* Button color */
@@ -130,7 +137,7 @@ def display_topic_buttons():
         if st.button("Rule Book"):
             with col4:
                 with st.spinner("Updating my rules knowledge, please wait."):
-                    st.session_state.vector_db = load_vector_db(faiss_folder_1)
+                    st.session_state.vector_db = load_vector_db(faiss_rulebook)
             st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
             st.session_state.selected_topic = True
             st.session_state.input_message = "Let's discuss some NFL rules!"
@@ -139,7 +146,7 @@ def display_topic_buttons():
         if st.button("Glossary"):
             with col4:
                 with st.spinner("Studying glossary, please wait."):
-                    st.session_state.vector_db = load_vector_db(faiss_folder_2)
+                    st.session_state.vector_db = load_vector_db(faiss_glossary)
             st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
             st.session_state.selected_topic = True
             st.session_state.input_message = "Let's discuss some NFL glossary!"
@@ -148,7 +155,7 @@ def display_topic_buttons():
         if st.button("News"):
             with col4:
                 with st.spinner("Studying latest news, please wait."):
-                    st.session_state.vector_db = load_vector_db(faiss_folder_3)
+                    st.session_state.vector_db = load_vector_db(faiss_news)
             st.session_state.messages.append({"role": "assistant", "content": "You've selected *News*. Let's dive in!"})
             st.session_state.selected_topic = True
             st.session_state.input_message = "Let's discuss some NFL news!"
