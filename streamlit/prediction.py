@@ -39,7 +39,8 @@ st.markdown("""
 week, season, game_type = get_current_week()
 
 def update_week_dummy(week, season, game_type, sql_engine):
-    st.error("update_week is a DUMMY function, remember to change it!!")
+    #st.error("update_week is a DUMMY function, remember to change it!!")
+    pass
 def update_running_game_dummy(game_id, sql_engine):
     st.error("update_running_game is a DUMMY function, remember to change it!!")
 
