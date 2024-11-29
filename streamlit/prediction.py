@@ -4,16 +4,7 @@ import pandas as pd
 
 from sklearn.tree import DecisionTreeClassifier
 
-# from sklearn.compose import ColumnTransformer
-# from sklearn.model_selection import train_test_split
-# from sklearn.pipeline import Pipeline
-# from sklearn.preprocessing import OneHotEncoder, StandardScaler
-
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input, Dropout
-# from scikeras.wrappers import KerasClassifier
-# from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 import dill 
 import pickle 
@@ -60,7 +51,7 @@ def display_buttons(position):
     if st.button("Update latest play", key=f"restart{position}"):
         update_running_game_dummy(play_data['game_id'], sql_engine)
         st.rerun()
-    st.write("Updating the latest play relies on the update of the ESPN database. In case they are falling behind, feel free to madofiy the game situation manually.")
+    st.write("Updating the latest play relies on the update of the ESPN database. In case they are falling behind, feel free to modify the game situation manually.")
     if st.button("Modify manually", key=f"manual{position}"):
         st.session_state["choice"] = "User Input (Full)"
         st.rerun()
@@ -176,7 +167,6 @@ if st.session_state["choice"] == "Live Game":
     play_data = {'next_down': 0} # dummy
 
     with st.spinner("Updating Database"):
-        print("updating week", week, season, game_type)
         update_week_dummy(week, season, game_type, sql_engine)
         running_games = query_db(sql_engine, "SELECT * FROM games WHERE game_status=2;")
 
@@ -407,9 +397,9 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
     'defenseAbr': play_data['awayAbr'] if team_possession==home_team else play_data['homeAbr'],
     'totalTimeLeft': (clock_seconds + (4 - quarter) * 15 * 60), 'completionRate': play_data['completionRate'], 'passToRushRatio': play_data['passToRushRatio']}
 
-    with open('sources/nn_classifier.pkl', 'rb') as f:
+    with open('streamlit/sources/nn_classifier.pkl', 'rb') as f:
         nn_classifier = dill.load(f)
-    with open('sources/nn_encoder.pkl', 'rb') as f:
+    with open('streamlit/sources/nn_encoder.pkl', 'rb') as f:
         nn_encoder = dill.load(f)
 
     try:
@@ -427,7 +417,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         col1, col2 = st.columns(2)
         with col1:
             st.header("Win probabilities:")
-            with open('sources/nn_regressor.pkl', 'rb') as f:
+            with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
                 nn_regressor = dill.load(f)
             win_probabilities = nn_regressor.predict(plays_df)
             plot_win_probabilities(plays_df['totalTimeLeft'], win_probabilities[:,0], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
@@ -441,7 +431,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
 if st.session_state["choice"] == 'User Input (Tree)':
    
     with st.spinner("Planting Tree..."):
-        with open('sources/decision_tree_model.pkl', 'rb') as f:
+        with open('streamlit/sources/decision_tree_model.pkl', 'rb') as f:
             clf = pickle.load(f)
          
         def prune_duplicate_leaves(mdl):
@@ -466,13 +456,8 @@ if st.session_state["choice"] == 'User Input (Tree)':
             decisions = mdl.tree_.value.argmax(axis=2).flatten().tolist()
             prune_index(mdl.tree_, decisions)
 
-
-        # with open('sources/decision_tree_model.pkl', 'rb') as f:
-        #     clf = pickle.load(f)
-
     st.title('Interactive Decision Tree Classifier')
 
-    # Initialize session state variables
     if "current_node" not in st.session_state:
         st.session_state.current_node = 0  # Start at root
         st.session_state.path = []  # Store path decisions

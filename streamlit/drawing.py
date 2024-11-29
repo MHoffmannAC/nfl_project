@@ -25,7 +25,7 @@ st.header("LogoRecognizer")
 @st.cache_resource
 def load_model():
     with st.spinner("Loading model..."):
-        with open('sources/logo_model.pkl', 'rb') as f:
+        with open('streamlit/sources/logo_model.pkl', 'rb') as f:
             logo_model = dill.load(f)
     return logo_model
 
@@ -89,7 +89,6 @@ with col1:
             return np.array(processed_images)
         image = Image.fromarray(canvas_result.image_data)
         teams = sql_engine.connect().execute(text(f"SELECT team_id, name, logo FROM teams")).fetchall()
-        print(teams)
         teams_dict = {i[0]-1: i[1] for i in teams}
         image_for_prediction = np.expand_dims(preprocess_images([image])[0], axis=0)
         #st.write(logo_model.predict(image_for_prediction))
@@ -102,7 +101,7 @@ with col1:
         else:
             st.write("I am not sure yet, please continue drawing")
 
-        url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
+    url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
         
     st.markdown("The model is still in training, feel free to add your own drawings to the database [here](%s)" % url)
 

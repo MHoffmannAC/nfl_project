@@ -7,8 +7,15 @@ keys.py
 ressources/chatbot/sources/
 ressources/chatbot/prepare_chatbot.ipynb
 test.ipynb
-my_pages/unused/
 .streamlit
 .streamlit/secrets.toml
-imperial-medium-437307-r0-9d8054052481.json
 .DS_Store
+ressources/data_collection/test.py
+ressources/image_recog/best_model.keras
+ressources/data_collection/test.txt
+ressources/clustering/clusters.png
+ressources/DecisionTree.png
+ressources/.DS_Store
+requirements_app.txt
+streamlit/sources/logo_modelv1.pkl
+streamlit/unused/

@@ -7,9 +7,9 @@ import pandas as pd
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from keys import mysql_password 
+from keys import aiven_pwd 
 
-sql_engine = create_engine(f"mysql+pymysql://root:{mysql_password}@localhost:3306/nfl", pool_size=20, max_overflow=50)
+sql_engine = create_engine(f"mysql+pymysql://avnadmin:{aiven_pwd}@mysql-nfl-mhoffmann-nfl.b.aivencloud.com:10448/nfl", pool_size=20, max_overflow=50)
 
 def get_existing_ids(sql_engine, table, id_column):
     result = sql_engine.connect().execute(text(f"SELECT {id_column} FROM {table}"))
