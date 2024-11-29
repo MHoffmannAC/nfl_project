@@ -49,7 +49,7 @@ def update_week_cached(week, season, game_type, _sql_engine):
 
 def display_buttons(position):
     if st.button("Update latest play", key=f"restart{position}"):
-        update_running_game_dummy(play_data['game_id'], sql_engine)
+        update_running_game(play_data['game_id'], sql_engine)
         st.rerun()
     st.write("Updating the latest play relies on the update of the ESPN database. In case they are falling behind, feel free to modify the game situation manually.")
     if st.button("Modify manually", key=f"manual{position}"):
@@ -167,7 +167,7 @@ if st.session_state["choice"] == "Live Game":
     play_data = {'next_down': 0} # dummy
 
     with st.spinner("Updating Database"):
-        update_week_dummy(week, season, game_type, sql_engine)
+        update_week(week, season, game_type, sql_engine)
         running_games = query_db(sql_engine, "SELECT * FROM games WHERE game_status=2;")
 
     st.header("Live Game")
