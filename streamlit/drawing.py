@@ -97,9 +97,9 @@ with col1:
         probability = logo_model.predict(image_for_prediction)[0][logo_model.predict(image_for_prediction).argmax()]
         st.write("The AI predicts:")
         if probability > 0.3:
-            st.write(f"I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
+            st.success(f"I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
         else:
-            st.write("I am not sure yet, please continue drawing")
+            st.error("I am not sure yet, please continue drawing")
 
     url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
         
