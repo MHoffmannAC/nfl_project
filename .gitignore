@@ -7,7 +7,6 @@ keys.py
 ressources/chatbot/sources/
 ressources/chatbot/prepare_chatbot.ipynb
 test.ipynb
-.streamlit
 .streamlit/secrets.toml
 .DS_Store
 ressources/data_collection/test.py
