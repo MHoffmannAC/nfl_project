@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 
 from sources.long_queries import query_plays
+from sources.plots import plot_play_probabilities, plot_points, plot_win_probabilities
 from sources.sql import query_db, create_sql_engine, get_current_week, get_existing_ids, update_running_game, update_week
 sql_engine = create_sql_engine()
 
@@ -57,104 +58,8 @@ def display_buttons(position):
         st.session_state["choice"] = "User Input (Full)"
         st.rerun()
 
-def plot_play_probabilities(classes, probabilities):
-    fig, ax = plt.subplots(figsize=(3, 1.5))
-    fig.patch.set_facecolor("#00093a")
-    ax.set_facecolor("#00093a")
-    sorted_classes = classes[probabilities.argsort()]
-    sorted_probabilities = probabilities[probabilities.argsort()]
-
-    colors =  ["gray"] * (len(sorted_classes) - 1) + ["#800020"]
-    bars = ax.barh(sorted_classes, sorted_probabilities * 100, color=colors)
-    for i, bar in enumerate(bars):
-        ax.text(
-            bar.get_width() + 1 if bar.get_width()<90 else bar.get_width() -1,  # Position to the right of the bar
-            bar.get_y() + bar.get_height() / 2,  # Centered vertically on the bar
-            f"{sorted_probabilities[i] * 100:.0f}%",  # Display percentage with 1 decimal place
-            va="center",
-            ha="left" if bar.get_width()<90 else "right",
-            color="white",
-            fontsize=6
-        )    
-    ax.xaxis.label.set_color("white")
-    ax.yaxis.label.set_color("white")
-    ax.tick_params(axis='x', colors='white', which='both', top=False, bottom=False, labelbottom=False)
-    ax.tick_params(axis='y', colors='white')
-    #plt.xlabel("Probabilities", fontsize=9, color="white")
-    plt.yticks(fontsize=10, color="white")
-    plt.xlim(0,100)
-    for spine in ax.spines.values():
-        spine.set_edgecolor("white")
-    st.pyplot(fig, use_container_width=False)
-
-def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeName, awayName):
-    fig, ax = plt.subplots(figsize=(3, 2))    
-    fig.patch.set_facecolor("#00093a")
-    ax.set_facecolor("white")
-    ax.plot(timeLeft / 60, probabilities*100, color="#00093a", linewidth=1)
-    ax.axhline(50, color="gray", linestyle="-", linewidth=0.5)
-
-    plt.fill_between(timeLeft / 60, probabilities*100, 50, where=(probabilities*100 > 50), interpolate=True, color=f"#{homeColor}", alpha=0.5)
-    plt.fill_between(timeLeft / 60, probabilities*100, 50, where=(probabilities*100 < 50), interpolate=True, color=f"#{awayColor}", alpha=0.5)
-
-    for time in range(0, 3600, 900):  # 900 seconds = 15 minutes
-        ax.axvline(time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7)
-
-    ax.set_ylabel("Win Probability", fontsize=10, color="white")
-    ax.tick_params(axis='x', colors='#00093a')
-    ax.tick_params(axis='y', colors='#00093a', which='both', left=False, right=False, labelleft=False)
-    ax.set_xlim(60, 0)
-    ax.set_ylim(0, 100)
-
-    quarter_labels = ["Q1", "Q2", "Q3", "Q4"]
-    quarter_positions = [3600 / 60 - 7.5, 2700 / 60 - 7.5, 1800 / 60 - 7.5, 900 / 60 - 7.5]  # Middle of intervals
-    ax.set_xticks(quarter_positions)
-    ax.set_xticklabels(quarter_labels, fontsize=8, color="white")
-
-    ax.text(58, 90, homeName, va="center", ha="left", color=f"#{homeColor}", fontsize=8, bbox=dict(facecolor='white', edgecolor=f"#{homeColor}", boxstyle='round,pad=0.3'))
-    ax.text(58, 10, awayName, va="center", ha="left", color=f"#{awayColor}", fontsize=8, bbox=dict(facecolor='white', edgecolor=f"#{awayColor}", boxstyle='round,pad=0.3',linestyle=(3, (9.1,1))))
-
-    for spine in ax.spines.values():
-        spine.set_edgecolor("#00093a")
-    plt.tight_layout()
-    st.pyplot(fig, use_container_width=False)
-
-def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, awayName):
-    fig, ax = plt.subplots(figsize=(3, 2))    
-    fig.patch.set_facecolor("#00093a")
-    ax.set_facecolor("white")
-
-    ax.plot(timeLeft / 60, homeScore, color=f"#{homeColor}", linewidth=1)
-    ax.plot(timeLeft / 60, awayScore, color=f"#{awayColor}", linewidth=1,linestyle=(0, (9.1,2)))
-
-    plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore > awayScore), interpolate=True, color=f"#{homeColor}", alpha=0.5)
-    plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore < awayScore), interpolate=True, color=f"#{awayColor}", alpha=0.5)
-
-    for time in range(0, 3600, 900):  # 900 seconds = 15 minutes
-        ax.axvline(time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7)
-
-    ax.set_ylabel("Points", fontsize=10, color="white", rotation=270, labelpad=15, loc='center')
-    ax.tick_params(axis='x', colors='#00093a')
-    ax.tick_params(axis='y', colors='white')
-    ax.set_xlim(60, 0)
-    #ax.set_ylim(0, 100)
-    ax.yaxis.set_label_position("right")
-    ax.yaxis.tick_right()
-
-    quarter_labels = ["Q1", "Q2", "Q3", "Q4"]
-    quarter_positions = [3600 / 60 - 7.5, 2700 / 60 - 7.5, 1800 / 60 - 7.5, 900 / 60 - 7.5]  # Middle of intervals
-    ax.set_xticks(quarter_positions)
-    ax.set_xticklabels(quarter_labels, fontsize=8, color="white")
-
-    #ax.text(58, 90, homeName, va="center", ha="left", color=f"#{homeColor}", fontsize=8, bbox=dict(facecolor='white', edgecolor=f"#{homeColor}", boxstyle='round,pad=0.3'))
-    #ax.text(58, 10, awayName, va="center", ha="left", color=f"#{awayColor}", fontsize=8, bbox=dict(facecolor='white', edgecolor=f"#{awayColor}", boxstyle='round,pad=0.3'))
-
-    for spine in ax.spines.values():
-        spine.set_edgecolor("#00093a")
-    plt.tight_layout()
-    st.pyplot(fig, use_container_width=False)
-
 # Main Page
+st.markdown('<div style="text-align: right"><a href="models" target="_self">ⓘ</a></div>', unsafe_allow_html=True)
 st.title("NFL Predictor")
 
 if "choice" not in st.session_state:
@@ -171,7 +76,7 @@ if st.session_state["choice"] == "Live Game":
         update_week_cached(week, season, game_type, sql_engine)
         running_games = query_db(sql_engine, "SELECT * FROM games WHERE game_status=2;")
 
-    st.header("Live Game")
+    st.subheader("Live Game")
     game_mapping = {game['name']: game for game in running_games}
     game_mapping[None] = None
     if not "game_name_selected" in st.session_state:
@@ -241,7 +146,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         with col3:
             display_buttons("top")
 
-    st.markdown("---")
+    st.divider()
 
     col1, col2, _ = st.columns(3)
 
@@ -255,7 +160,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         away_team = st.selectbox("Select Away Team", options=all_teams, index=all_teams.index(play_data['awayName']), disabled=(st.session_state["choice"] == "Live Game"))
         away_score = st.number_input("Away Team Score", min_value=0, step=1, value=play_data['awayScore'], disabled=(st.session_state["choice"] == "Live Game"))
 
-    st.markdown("---")
+    st.divider()
 
     col1, col2, _ = st.columns(3)
     with col1:
@@ -268,7 +173,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         except ValueError:
             st.error("Invalid time format. Please enter in mm:ss format.")
 
-    st.markdown("---")
+    st.divider()
 
     col1, col2, _ = st.columns(3)
     with col1:
@@ -278,7 +183,8 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         down = st.slider("Down", min_value=1, max_value=4, step=1, value=play_data['next_down'], disabled=(st.session_state["choice"] == "Live Game"))  
         yards_for_first = st.number_input("Yards for 1st", min_value=1, step=1, value=play_data['next_distance'], disabled=(st.session_state["choice"] == "Live Game")) 
 
-    st.markdown("---")
+    st.divider()
+
     standings_input = "No"
     if not (st.session_state["choice"] == "Live Game"):
         col1, _, _ = st.columns(3)
@@ -378,6 +284,8 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         standing_away_home_loss = play_data["standing_away_home_loss"]
         standing_away_road_loss = play_data["standing_away_road_loss"]
 
+    st.divider()
+
     prediction_data = {'quarter': quarter, 'clock_seconds': clock_seconds, 'offenseAtHome': 1 if team_possession==home_team else 0, 'down': down, 'distance': yards_for_first, 'yardsToEndzone': yards_to_endzone, 'season': season, 'game_type': "regular-season" if game_type=="Regular" else "post-season", 'week': week,
     'offenseScore': home_score if team_possession==home_team else away_score,
     'defenseScore': away_score if team_possession==home_team else home_score,
@@ -410,21 +318,29 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
 
     col1, col2, = st.columns(2)
     with col1:
-        st.header("Play probabilities:")
+        st.subheader("Play probabilities:")
         plot_play_probabilities(nn_encoder.categories_[0], class_probabilities)
+
+    with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
+        nn_regressor = dill.load(f)
     if (st.session_state["choice"] == "Live Game"):
         with col2:
             display_buttons("bottom")
         col1, col2 = st.columns(2)
         with col1:
-            st.header("Win probabilities:")
-            with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
-                nn_regressor = dill.load(f)
+            st.subheader("Win probabilities:")
             win_probabilities = nn_regressor.predict(plays_df)
             plot_win_probabilities(plays_df['totalTimeLeft'], win_probabilities[:,0], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
         with col2:
-            st.header("Scores:")
+            st.subheader("Scores:")
             plot_points(plays_df['totalTimeLeft'], plays_df['homeScore'], plays_df['awayScore'], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
+    else:
+        st.subheader("Win probabilities:")
+        probabilities = nn_regressor.predict(pd.DataFrame(play_data).T)
+        st.write(f"Home team win probability: {np.round(probabilities[0][0]*100)}%")
+        st.write(f"Away team win probability: {np.round(probabilities[0][1]*100)}%")
+        if (np.round(probabilities[0][2]*100))>0:
+            st.write(f"Tie probability: {np.round(probabilities[0][1]*100)}%")
 
 
 

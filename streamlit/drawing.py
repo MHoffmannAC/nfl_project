@@ -100,11 +100,10 @@ with col2:
         team_decoder = {0: 0, 1: 2, 2: 5, 3: 6, 4: 8, 5: 15, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 25}
         #st.write(logo_model.predict(image_for_prediction))
         probability = logo_model.predict(image_for_prediction)[0][logo_model.predict(image_for_prediction).argmax()]
-        st.write("The AI predicts:")
         if probability > 0.3:
-            st.success(f"I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
+            st.success(f"The AI predicts: I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
         else:
-            st.error("I am not sure yet, please continue drawing")
+            st.error("The AI predicts: I am not sure yet, please continue drawing")
 
     url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
         

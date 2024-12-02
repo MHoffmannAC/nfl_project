@@ -1,11 +1,5 @@
 import streamlit as st
 
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parent / "streamlit"))
-sys.path.append(str(Path(__file__).resolve().parent / "streamlit/sources"))
-import sql
-
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)

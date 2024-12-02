@@ -11,6 +11,7 @@ test.ipynb
 .DS_Store
 ressources/data_collection/test.py
 ressources/image_recog/best_model.keras
+ressources/image_recog/images/
 ressources/data_collection/test.txt
 ressources/clustering/clusters.png
 ressources/DecisionTree.png
@@ -18,3 +19,5 @@ ressources/.DS_Store
 requirements_app.txt
 streamlit/sources/logo_modelv1.pkl
 streamlit/unused/
+ressources/regression/nn_regressor.pkl
+streamlit/sources/nn_regressor_v1.pkl

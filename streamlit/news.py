@@ -34,7 +34,7 @@ headline_to_story = {i["headline"]: i["story"] for i in news}
 headline = st.selectbox("Select a news:", options=[i['headline'] for i in news], index=None, placeholder="")
 if headline is not None:
     story = headline_to_story[headline]
-    style = st.segmented_control("Choose a style how do present the news:", ["NFL expert", "Normal person", "Child"], default=None, selection_mode="single")
+    style = st.segmented_control("Choose a target audience to decide how do present the news:", ["NFL expert", "Normal person", "Child"], default=None, selection_mode="single")
     long_style = {"NFL expert": "'An NFL Expert who watches almost every game and is very familiar with the terminology and is particularly interested in statistics'", 
               "Normal person": "'And average person who might watch some games every now and then but besides that is not much involved with American Football or the NFL'", 
               "Child": "'Five year old child who knows nothing about football but is super enthusiastic to learn, yet needs most american football related words explained in an easy understandable way by relating to kids topics'"}

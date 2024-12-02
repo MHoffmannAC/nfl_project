@@ -480,7 +480,7 @@ def get_news(sql_engine):
         article_links.add(article_link)
         article_link = article_i.get('links', {}).get('api', {}).get('self', {}).get('href', '')
         article_links.add(article_link)
-    article_links.add(urls[1])
+    #article_links.add(urls[1])
     for team_id in range(1,35):
         news_response = requests.get(urls[2]+str(team_id))
         news_data = news_response.json()
