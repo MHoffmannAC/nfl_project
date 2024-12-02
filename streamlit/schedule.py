@@ -9,7 +9,7 @@ sql_engine = create_sql_engine()
 
 current_week, current_season, current_game_type = get_current_week()
 
-st.header("Schedule")
+st.title("Schedule")
 
 col1, _ = st.columns([1,4])
 with col1:
@@ -39,15 +39,15 @@ st.write("")
 
 col1, col2, col3, col4, col5 = st.columns([1,1,0.5,0.5, 0.5])
 with col1:
-    st.subheader("Home team")
+    st.header("Home team")
 with col2:
-    st.subheader("Away team")
+    st.header("Away team")
 with col3:
-    st.subheader("Scheduled")
+    st.header("Scheduled")
 with col4:
-    st.subheader("Score")
+    st.header("Score")
 with col5:
-    st.subheader("Odds")
+    st.header("Odds")
 st.divider()
 
 with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
@@ -59,24 +59,24 @@ for game in games:
         plays = pd.DataFrame(query_db(sql_engine, query))
     col1, col2, col3, col4, col5 = st.columns([1,1,0.5,0.5, 0.5])
     with col1:
-        st.write(teams.loc[teams['team_id']==game['home_team_id']]['name'].values[0])
+        st.subheader(teams.loc[teams['team_id']==game['home_team_id']]['name'].values[0])
     with col2:
-        st.write(teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
+        st.subheader(teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
     with col3:
         if int(game['game_status'])==1:
-            st.write(game['date'])
+            st.subheader(game['date'])
         elif int(game['game_status'])==2:
             quarter = {1: "1st Qtr", 2: "2nd Qtr", 3: "3rd Qtr", 4: "4th Qtr", 5: "OT"}
-            st.write(quarter[plays.iloc[-1]['quarter']])
+            st.subheader(quarter[plays.iloc[-1]['quarter']])
         else:
-            st.write("Final")
+            st.subheader("Final")
     with col4:
         if int(game['game_status'])>1:
             if int(game['game_status'])==2:
                 score = "("+str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])+")"
             else:
                 score = str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])
-            st.write(score)
+            st.subheader(score)
     with col5:
         if int(game['game_status'])>1:
             probabilities = nn_regressor.predict(plays)[:,0]
