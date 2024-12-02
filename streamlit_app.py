@@ -19,12 +19,15 @@ def main():
         <style>
         div[data-testid="stSidebarCollapseButton"] { 
             display: none;
-}
+        }
+        a[data-testid="stSidebarNavLink"] {
+        background-color: rgba(255,255,255,0.1)  !important      
+        }
         </style>
         """, unsafe_allow_html=True)
 
     st.logo("streamlit/images/sidebar.png", size='large')
-    page = st.navigation([st.Page("streamlit/start.py", title="Home Page", default=True), st.Page("streamlit/details.py", title="Schedule"), st.Page("streamlit/prediction.py", title="PlayAnalyzer"), st.Page("streamlit/chatbot.py", title="NFLBot"), st.Page("streamlit/news.py", title="News"), st.Page("streamlit/drawing.py", title="LogoRecognizer")])
+    page = st.navigation({"General pages": [st.Page("streamlit/start.py", title="Home Page", default=True), st.Page("streamlit/schedule.py", title="Schedule"), st.Page("streamlit/details.py", title="Teams")], "Analyzing Tools": [st.Page("streamlit/prediction.py", title="PlayAnalyzer"), st.Page("streamlit/chatbot.py", title="NFLBot"), st.Page("streamlit/news.py", title="NewsBot"), st.Page("streamlit/drawing.py", title="LogoRecognizer")], "More Information":[st.Page("streamlit/data.py", title="Data Aquisition"), st.Page("streamlit/models.py", title="ML/AI models")]})
 
     page.run()
 

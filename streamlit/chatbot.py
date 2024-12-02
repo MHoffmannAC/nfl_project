@@ -105,6 +105,11 @@ st.markdown(
         background-color: #0056b3; /* Darker blue on hover */
         color: white;
     }
+    textarea[data-testid="stChatInputTextArea"]::placeholder {
+        color: red !important; /* Change placeholder text color to red */
+        font-style: italic;    /* Optional: Italicize the placeholder */
+        font-size: 16px;       /* Optional: Adjust font size */
+    }
     </style>
     """, 
     unsafe_allow_html=True
@@ -131,34 +136,29 @@ with st.container():
 
 # Topic selection as a chat message
 def display_topic_buttons():
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 6])
 
-    with col1:
-        if st.button("Rule Book"):
-            with col4:
-                with st.spinner("Updating my rules knowledge, please wait."):
-                    st.session_state.vector_db = load_vector_db(faiss_rulebook)
-            st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
-            st.session_state.selected_topic = True
-            st.session_state.input_message = "Let's discuss some NFL rules!"
+    st.session_state.selected_topic = st.segmented_control(None, ["Rule Book", "Glossary", "News"], default=None, selection_mode="single")
 
-    with col2:
-        if st.button("Glossary"):
-            with col4:
-                with st.spinner("Studying glossary, please wait."):
-                    st.session_state.vector_db = load_vector_db(faiss_glossary)
-            st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
-            st.session_state.selected_topic = True
-            st.session_state.input_message = "Let's discuss some NFL glossary!"
+    if st.session_state.selected_topic == "Rule Book":
+        with st.spinner("Updating my rules knowledge, please wait."):
+            st.session_state.vector_db = load_vector_db(faiss_rulebook)
+        st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
+        st.session_state.selected_topic = True
+        st.session_state.input_message = "Let's discuss some NFL rules!"
 
-    with col3:
-        if st.button("News"):
-            with col4:
-                with st.spinner("Studying latest news, please wait."):
-                    st.session_state.vector_db = load_vector_db(faiss_news)
-            st.session_state.messages.append({"role": "assistant", "content": "You've selected *News*. Let's dive in!"})
-            st.session_state.selected_topic = True
-            st.session_state.input_message = "Let's discuss some NFL news!"
+    if st.session_state.selected_topic == "Glossary":
+        with st.spinner("Studying glossary, please wait."):
+            st.session_state.vector_db = load_vector_db(faiss_glossary)
+        st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
+        st.session_state.selected_topic = True
+        st.session_state.input_message = "Let's discuss some NFL glossary!"
+
+    if st.session_state.selected_topic == "News":
+        with st.spinner("Studying latest news, please wait."):
+            st.session_state.vector_db = load_vector_db(faiss_news)
+        st.session_state.messages.append({"role": "assistant", "content": "You've selected *News*. Let's dive in!"})
+        st.session_state.selected_topic = True
+        st.session_state.input_message = "Let's discuss some NFL news!"
 
     st.write("")
 
@@ -184,8 +184,9 @@ if st.session_state.selected_topic:
     if prompt:
         if prompt.lower() == "change topic":
             st.session_state.selected_topic = False
+            st.chat_message("assistant").markdown("Sure! Let's change the topic. Please choose a new topic:")
             st.session_state.messages.append({"role": "assistant", "content": "Sure! Let's change the topic. Please choose a new topic:"})
-            display_topic_buttons()
+            display_topic_buttons
         else:
             # Display user message
             st.chat_message("user").markdown(prompt)

@@ -44,7 +44,7 @@ def get_news():
             article_links.add(article_link)
     except Exception as e:
         print(e)
-    article_links.add(urls[1])
+    #article_links.add(urls[1])
     for team_id in range(1,35):
         try:
             news_response = requests.get(urls[2]+str(team_id))

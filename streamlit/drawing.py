@@ -31,35 +31,40 @@ def load_model():
 
 logo_model = load_model()
 
-# Specify canvas parameters in application
-st.session_state["drawing_mode"] = st.sidebar.selectbox(
-    "Drawing tool:", ("freedraw", "line", "rect", "circle", "transform")
-)
+st.write("Draw a logo of an NFL team and let the AI determine the team.")
 
-st.session_state["stroke_width"] = st.sidebar.slider("Stroke width: ", 1, 25, 3)
 
-if st.session_state["drawing_mode"] == 'point':
-    point_display_radius = st.sidebar.slider("Point display radius: ", 1, 25, 3)
+col1, col2, col3 = st.columns([1,3,2])
 
-col1, col2 = st.sidebar.columns(2)
 with col1:
-    st.session_state["stroke_color"] = st.color_picker("Stroke color: ")
+
+    # Specify canvas parameters in application
+    st.session_state["drawing_mode"] = st.selectbox(
+        "", ("freedraw", "line", "rect", "circle", "transform")
+    )
+
+    st.session_state["stroke_width"] = st.slider("Stroke width: ", 1, 25, 3)
+
+    if st.session_state["drawing_mode"] == 'point':
+        point_display_radius = st.slider("Point display radius: ", 1, 25, 3)
+
+    col11, col12 = st.columns(2)
+    with col11:
+        st.session_state["stroke_color"] = st.color_picker("Stroke color: ")
+    with col12:
+        st.session_state["stroke_opacity"] = st.slider("Stroke opacity:", 0.0, 1.0, value=1.0)
+        st.session_state["stroke_opacity"] = hex(int(20.0+st.session_state["stroke_opacity"]*235.0))[-2:]
+
+    col11, col12 = st.columns(2)
+    with col11:
+        st.session_state["fill_color"] = st.color_picker("Fill color: ")
+        st.session_state["bg_color"] = st.color_picker("Background: ", "#eee")
+    with col12:
+        st.session_state["fill_opacity"] = st.slider("Fill opacity:", 0.0, 1.0, value=1.0)
+        st.session_state["fill_opacity"] = hex(int(20.0+st.session_state["fill_opacity"]*235.0))[-2:]
+
+
 with col2:
-    st.session_state["stroke_opacity"] = st.slider("Stroke opacity:", 0.0, 1.0, value=1.0, label_visibility="hidden")
-    st.session_state["stroke_opacity"] = hex(int(20.0+st.session_state["stroke_opacity"]*235.0))[-2:]
-
-col1, col2 = st.sidebar.columns(2)
-with col1:
-    st.session_state["fill_color"] = st.color_picker("Fill color: ")
-    st.session_state["bg_color"] = st.color_picker("Background: ", "#eee")
-with col2:
-    st.session_state["fill_opacity"] = st.slider("Fill opacity:", 0.0, 1.0, value=1.0, label_visibility="collapsed")
-    st.session_state["fill_opacity"] = hex(int(20.0+st.session_state["fill_opacity"]*235.0))[-2:]
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.write("Draw a logo of an NFL team and let the AI determine the team.")
 
 
     # Create a canvas component
@@ -106,7 +111,7 @@ with col1:
     st.markdown("The model is still in training, feel free to add your own drawings to the database [here](%s)" % url)
 
 
-with col2:
+with col3:
         st.write("Upload a (drawn) logo of an NFL team and let the AI determine the team.")
         logo_upload = st.file_uploader("File uploader:", type=["png", "jpg"])
         if logo_upload is not None:
