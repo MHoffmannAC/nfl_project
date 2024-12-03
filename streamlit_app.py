@@ -1,11 +1,10 @@
 import streamlit as st
 
-def local_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent / "streamlit"))
 
 
-# Streamlit App with Navigation
 def main():
     st.set_page_config(layout="wide")
 

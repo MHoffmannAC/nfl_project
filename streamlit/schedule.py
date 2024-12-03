@@ -10,6 +10,21 @@ sql_engine = create_sql_engine()
 
 current_week, current_season, current_game_type = get_current_week()
 
+st.markdown("""
+    <style>
+    h1, h2, h3, h4, h5, h6 {
+        pointer-events: none; /* Disable link functionality */
+    }
+    [data-testid="stHeaderActionElements"] {
+        display: none; /* Hide the copy link icon */
+    }
+    .streamlit-header:hover a {
+        display: none; /* Hide the copy link icon */
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+
 st.title("Schedule")
 
 col1, _ = st.columns([1,4])
@@ -75,10 +90,14 @@ for game in games:
         if int(game['game_status'])>1:
             if int(game['game_status'])==2:
                 score = "("+str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])+")"
-                st.page_link("streamlit/details.py", label=score, use_container_width=None)
+                #st.page_link("streamlit/prediction.py", label=score, use_container_width=None)
+                st.markdown(
+                    f"""<b><a href="/prediction?game={game['name']}" style="font-size: 1.6em; color: inherit;" target="_self">{score}</a></b>""",
+                    unsafe_allow_html=True,
+                )
             else:
                 score = str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])
-            st.subheader(score)
+                st.subheader(score)
     with col5:
         if int(game['game_status'])>1:
             probabilities = nn_regressor.predict(plays)[:,0]

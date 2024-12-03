@@ -47,7 +47,7 @@ def update_running_game_dummy(game_id, sql_engine):
 
 @st.cache_resource
 def update_week_cached(week, season, game_type, _sql_engine):
-    update_week(week, season, game_type, sql_engine)
+    update_week_dummy(week, season, game_type, sql_engine)
 
 def display_buttons(position):
     if st.button("Update latest play", key=f"restart{position}"):
@@ -61,6 +61,11 @@ def display_buttons(position):
 # Main Page
 st.markdown('<div style="text-align: right"><a href="models" target="_self">ⓘ</a></div>', unsafe_allow_html=True)
 st.title("NFL Predictor")
+
+if "game" in st.query_params:
+    st.session_state["choice"] = "Live Game"
+    st.session_state["game_name_selected"] = st.query_params.game
+    st.query_params = {}
 
 if "choice" not in st.session_state:
     st.session_state["choice"] = None

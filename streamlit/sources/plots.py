@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import streamlit as st
 
 def plot_play_probabilities(classes, probabilities):
@@ -76,13 +77,18 @@ def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, 
     fig.patch.set_facecolor("#00093a")
     ax.set_facecolor("white")
 
-    ax.plot(timeLeft / 60, homeScore, color=f"#{homeColor}", linewidth=1)
-    ax.plot(timeLeft / 60, awayScore, color=f"#{awayColor}", linewidth=1,linestyle=(0, (9.1,2)))
+    ax.step(timeLeft / 60, homeScore, color=f"#{homeColor}", linewidth=1, where="post")
+    ax.step(timeLeft / 60, awayScore, color=f"#{awayColor}", linewidth=1,linestyle=(0, (9.1,2)), where="post")
 
-    plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore > awayScore), interpolate=True, color=f"#{homeColor}", alpha=0.5)
-    plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore < awayScore), interpolate=True, color=f"#{awayColor}", alpha=0.5)
-    # plt.fill_between(timeLeft / 60, homeScore, 0, where=(homeScore > awayScore), interpolate=True, color=f"#{homeColor}", alpha=0.5)
-    # plt.fill_between(timeLeft / 60, awayScore, 0, where=(homeScore < awayScore), interpolate=True, color=f"#{awayColor}", alpha=0.5)
+    timeLeft_post = np.repeat(timeLeft, 2)[1:]
+    homeScore_post = np.repeat(homeScore, 2)[:-1]
+    awayScore_post = np.repeat(awayScore, 2)[:-1]
+
+    #plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore > awayScore), interpolate=True, color=f"#{homeColor}", alpha=0.5)
+    #plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore < awayScore), interpolate=True, color=f"#{awayColor}", alpha=0.5)
+    plt.fill_between(timeLeft_post / 60, homeScore_post, 0, where=(homeScore_post > awayScore_post), interpolate=True, color=f"#{homeColor}", alpha=0.5)
+    plt.fill_between(timeLeft_post / 60, awayScore_post, 0, where=(homeScore_post < awayScore_post), interpolate=True, color=f"#{awayColor}", alpha=0.5)
+    plt.fill_between(timeLeft_post / 60, awayScore_post, 0, where=(homeScore_post == awayScore_post), interpolate=True, color=f"#111", alpha=0.75)
 
     for time in range(0, 3600, 900):  # 900 seconds = 15 minutes
         ax.axvline(time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7)
