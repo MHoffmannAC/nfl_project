@@ -63,6 +63,7 @@ st.markdown('<div style="text-align: right"><a href="models" target="_self">ⓘ<
 st.title("NFL Predictor")
 
 st.write(st.query_params["game"])
+st.write("...")
 
 if "game" in st.query_params:
     st.session_state["choice"] = "Live Game"
