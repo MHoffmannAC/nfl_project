@@ -68,7 +68,6 @@ st.write("...")
 if "game" in st.query_params:
     st.session_state["choice"] = "Live Game"
     st.session_state["game_name_selected"] = st.query_params.game
-    st.query_params = {}
 
 if "choice" not in st.session_state:
     st.session_state["choice"] = None
