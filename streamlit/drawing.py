@@ -5,6 +5,7 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from io import StringIO
 import dill 
+from datetime import datetime, timedelta
 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -17,7 +18,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from scikeras.wrappers import KerasClassifier
 
 from sqlalchemy import text
-from sources.sql import create_sql_engine
+from sources.sql import create_sql_engine, query_db
 sql_engine = create_sql_engine()
 
 st.header("LogoRecognizer")
@@ -96,35 +97,67 @@ with col2:
         teams_dict = {i[0]-1: i[1] for i in teams}
         image_for_prediction = np.expand_dims(preprocess_images([image])[0], axis=0)
         
-        #st.write(logo_model.predict(image_for_prediction))
         probability = logo_model.predict(image_for_prediction)[0][logo_model.predict(image_for_prediction).argmax()]
         if probability > 0.3:
             st.success(f"AI prediction: I think you are drawing the {teams_dict[logo_model.predict(image_for_prediction).argmax()]}. I am {round(probability*100)}% certain.")
-            team_decoder = {0: 0, 1: 2, 2: 5, 3: 6, 4: 8, 5: 15, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 25}
+            #team_decoder = {0: 0, 1: 2, 2: 5, 3: 6, 4: 8, 5: 15, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 25}
             #st.success(f"The AI predicts: I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
         else:
             st.error("AI prediction: I am not sure yet, please continue drawing")
 
-    url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
+    # url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
         
-    st.markdown("The model is still in training, feel free to add your own drawings to the database [here](%s)" % url)
-
+    # st.markdown("The model is still in training, feel free to add your own drawings to the database [here](%s)" % url)
 
 with col3:
-        st.write("Upload a (drawn) logo of an NFL team and let the AI determine the team.")
-        logo_upload = st.file_uploader("File uploader:", type=["png", "jpg"])
-        if logo_upload is not None:
-            image = Image.open(logo_upload)
-            houstan = np.expand_dims(preprocess_images([image])[0], axis=0)
-            st.image(houstan, caption="Uploaded Image in RGB", use_container_width=True)
-            st.write(houstan.shape)
-            st.write(logo_model.predict(houstan))
-            st.write(teams_dict[logo_model.predict(houstan).argmax()])
+    st.write("Upload a (drawn) logo of an NFL team and let the AI determine the team.")
+    logo_upload = st.file_uploader("File uploader:", type=["png", "jpg"])
+    if logo_upload is not None:
+        image = Image.open(logo_upload)
+        houstan = np.expand_dims(preprocess_images([image])[0], axis=0)
+        st.image(houstan, caption="Uploaded Image in RGB", use_container_width=True)
+        st.write(houstan.shape)
+        st.write(logo_model.predict(houstan))
+        st.write(teams_dict[logo_model.predict(houstan).argmax()])
 
-# weight = st.slider("  ", 0.0, 1.0, 0.0)
+st.divider()
 
-# mixed_image = image_for_prediction + weight * (houstan - image_for_prediction)
-# st.image(mixed_image, caption="mixed image", use_container_width=True)
-# st.write(mixed_image.shape)
-# st.write(logo_model.predict(mixed_image))
-# st.write(teams_dict[logo_model.predict(mixed_image).argmax()])
+
+if not "last_submission" in st.session_state:
+    st.session_state["last_submission"] = datetime.now()    
+
+col1, _ = st.columns(2)
+with col1:
+    st.write("")
+    show_upload = st.toggle("Show upload settings: The prediction model is still in training. Feel free to add your own drawings to the database to improve it, in particular if the model's prediction was wrong.", value=False, key=None, help=None, on_change=None, args=None, kwargs=None, disabled=False, label_visibility="visible")
+
+    if show_upload:
+        teams = pd.DataFrame(query_db(sql_engine, "SELECT * FROM teams;"))
+        teams = teams.loc[~(teams['team_id'].isin([-2,-1, 31,32]))]
+        teams.sort_values(by='location', inplace=True)
+        selected_team_name = st.selectbox("Please select which team you have drawn:", options=list(teams['name']), key="submit-team", index=None)
+        if not selected_team_name == None:
+            selected_team_id = teams.loc[teams['name']==selected_team_name, 'team_id'].values[0]
+
+        if st.button("Submit Image"):
+            matches = np.all(canvas_result.image_data == np.array([255, 255, 255, 255]), axis=-1)
+            white_part = np.sum(matches) / (canvas_result.image_data.shape[0] * canvas_result.image_data.shape[1])
+            if (white_part > 0.95):
+                st.write("Please draw something before submission.")
+            if (selected_team_name is None):
+                st.write("Please choose a team before submission.")
+            else:
+                current_time = datetime.now()
+                if current_time - st.session_state["last_submission"] >= timedelta(minutes=1):
+                    with st.spinner("Uploading Image..."):
+                        image = Image.fromarray(canvas_result.image_data).convert('RGB')
+                        image_array = np.array(image) / 255.0
+                        np.set_printoptions(threshold=np.inf)
+                        with sql_engine.connect() as conn:
+                            conn.execute(text(f"INSERT INTO logos (team_id, image) VALUES ({selected_team_id}, '{image_array}')"))
+                            conn.commit()
+                        
+                    st.write("Submission successful. Thank you!")
+                    st.session_state["last_submission"] = current_time
+                else:
+                    st.write("Please take your time to draw the image and try submitting again.")
