@@ -5,6 +5,7 @@ import dill
 from sources.plots import plot_win_probabilities
 from sources.sql import create_sql_engine, get_current_week, query_db
 from sources.long_queries import query_plays
+
 sql_engine = create_sql_engine()
 
 current_week, current_season, current_game_type = get_current_week()
@@ -74,6 +75,7 @@ for game in games:
         if int(game['game_status'])>1:
             if int(game['game_status'])==2:
                 score = "("+str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])+")"
+                st.page_link("streamlit/details.py", label=score, use_container_width=None)
             else:
                 score = str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])
             st.subheader(score)
