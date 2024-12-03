@@ -33,7 +33,7 @@ def main():
             st.Page("streamlit/details.py", title="Teams", icon=":material/groups:")
         ],
         "ML/AI Tools": [
-            st.Page("streamlit/prediction.py", title="PlayAnalyzer", icon=":material/sports_score:"),
+            st.Page("streamlit/prediction.py", title="PlayAnalyzer", icon=":material/sports_football:"),
             st.Page("streamlit/chatbot.py", title="ChatBot", icon=":material/chat:"),
             st.Page("streamlit/news.py", title="NewsBot", icon=":material/newspaper:"),
             st.Page("streamlit/drawing.py", title="LogoRecognizer", icon=":material/image_search:")
