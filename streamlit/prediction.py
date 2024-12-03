@@ -63,9 +63,6 @@ def display_buttons(position):
 st.markdown('<div style="text-align: right"><a href="models" target="_self">ⓘ</a></div>', unsafe_allow_html=True)
 st.title("NFL Predictor")
 
-st.write(st.query_params["game"])
-st.write("...")
-
 if "game" in st.query_params:
     st.write("game exists")
     sleep(10)
