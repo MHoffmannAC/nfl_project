@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+from time import sleep
 
 from sklearn.tree import DecisionTreeClassifier
 
@@ -66,6 +67,8 @@ st.write(st.query_params["game"])
 st.write("...")
 
 if "game" in st.query_params:
+    st.write("game exists")
+    sleep(10)
     st.session_state["choice"] = "Live Game"
     st.session_state["game_name_selected"] = st.query_params.game
 
