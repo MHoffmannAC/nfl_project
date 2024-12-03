@@ -16,11 +16,34 @@ def main():
         a[data-testid="stSidebarNavLink"] {
         background-color: rgba(255,255,255,0.1)  !important      
         }
+        a[data-testid="stSidebarNavLink"][aria-current="page"] {
+        background-color: #4CAF50;  /* Green color for active link */
+        color: white;  /* White text */
+        font-weight: bold;  /* Bold text */
+    }
         </style>
         """, unsafe_allow_html=True)
 
     st.logo("streamlit/images/sidebar.png", size='large')
-    page = st.navigation({"General pages": [st.Page("streamlit/start.py", title="Home Page", default=True), st.Page("streamlit/schedule.py", title="Schedule"), st.Page("streamlit/details.py", title="Teams")], "Analyzing Tools": [st.Page("streamlit/prediction.py", title="PlayAnalyzer"), st.Page("streamlit/chatbot.py", title="NFLBot"), st.Page("streamlit/news.py", title="NewsBot"), st.Page("streamlit/drawing.py", title="LogoRecognizer")], "More Information":[st.Page("streamlit/data.py", title="Data Aquisition"), st.Page("streamlit/models.py", title="ML/AI models")]})
+
+    page = st.navigation({
+        "General pages": [
+            st.Page("streamlit/start.py", title="Home Page", icon=":material/home:", default=True),
+            st.Page("streamlit/schedule.py", title="Schedule", icon=":material/schedule:"),
+            st.Page("streamlit/details.py", title="Teams", icon=":material/groups:")
+        ],
+        "ML/AI Tools": [
+            st.Page("streamlit/prediction.py", title="PlayAnalyzer", icon=":material/sports_score:"),
+            st.Page("streamlit/chatbot.py", title="ChatBot", icon=":material/chat:"),
+            st.Page("streamlit/news.py", title="NewsBot", icon=":material/newspaper:"),
+            st.Page("streamlit/drawing.py", title="LogoRecognizer", icon=":material/image_search:")
+        ],
+        "More Information": [
+            st.Page("streamlit/data.py", title="Data Acquisition", icon=":material/storage:"),
+            st.Page("streamlit/models.py", title="ML/AI models", icon=":material/dashboard:"),
+            st.Page("streamlit/feedback.py", title="Provide Feedback", icon=":material/feedback:")
+        ]
+    })
 
     page.run()
 

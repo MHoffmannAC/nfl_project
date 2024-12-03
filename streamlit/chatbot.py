@@ -186,7 +186,7 @@ if st.session_state.selected_topic:
             st.session_state.selected_topic = False
             st.chat_message("assistant").markdown("Sure! Let's change the topic. Please choose a new topic:")
             st.session_state.messages.append({"role": "assistant", "content": "Sure! Let's change the topic. Please choose a new topic:"})
-            display_topic_buttons
+            display_topic_buttons()
         else:
             # Display user message
             st.chat_message("user").markdown(prompt)

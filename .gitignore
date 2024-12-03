@@ -21,3 +21,4 @@ streamlit/sources/logo_modelv1.pkl
 streamlit/unused/
 ressources/regression/nn_regressor.pkl
 streamlit/sources/nn_regressor_v1.pkl
+ressources/image_recog/logo_model.pkl

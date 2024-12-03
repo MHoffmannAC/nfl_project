@@ -58,7 +58,7 @@ with col1:
     col11, col12 = st.columns(2)
     with col11:
         st.session_state["fill_color"] = st.color_picker("Fill color: ")
-        st.session_state["bg_color"] = st.color_picker("Background: ", "#eee")
+        st.session_state["bg_color"] = st.color_picker("Background: ", "#fff")
     with col12:
         st.session_state["fill_opacity"] = st.slider("Fill opacity:", 0.0, 1.0, value=1.0)
         st.session_state["fill_opacity"] = hex(int(20.0+st.session_state["fill_opacity"]*235.0))[-2:]
@@ -83,7 +83,6 @@ with col2:
     )
 
     if canvas_result.image_data is not None:
-
         def preprocess_images(image_list, target_size=(100, 100)):
             processed_images = []
             for img in image_list:
@@ -96,14 +95,15 @@ with col2:
         teams = sql_engine.connect().execute(text(f"SELECT team_id, name, logo FROM teams")).fetchall()
         teams_dict = {i[0]-1: i[1] for i in teams}
         image_for_prediction = np.expand_dims(preprocess_images([image])[0], axis=0)
-        #st.write(logo_model.predict(image_for_prediction))
-        team_decoder = {0: 0, 1: 2, 2: 5, 3: 6, 4: 8, 5: 15, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 25}
+        
         #st.write(logo_model.predict(image_for_prediction))
         probability = logo_model.predict(image_for_prediction)[0][logo_model.predict(image_for_prediction).argmax()]
         if probability > 0.3:
-            st.success(f"The AI predicts: I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
+            st.success(f"AI prediction: I think you are drawing the {teams_dict[logo_model.predict(image_for_prediction).argmax()]}. I am {round(probability*100)}% certain.")
+            team_decoder = {0: 0, 1: 2, 2: 5, 3: 6, 4: 8, 5: 15, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 25}
+            #st.success(f"The AI predicts: I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
         else:
-            st.error("The AI predicts: I am not sure yet, please continue drawing")
+            st.error("AI prediction: I am not sure yet, please continue drawing")
 
     url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
         
