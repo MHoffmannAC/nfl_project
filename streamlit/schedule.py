@@ -5,7 +5,6 @@ import dill
 from sources.plots import plot_win_probabilities
 from sources.sql import create_sql_engine, get_current_week, query_db
 from sources.long_queries import query_plays
-from streamlit_extras.switch_page_button import switch_page
 
 sql_engine = create_sql_engine()
 
