@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent / "streamlit"))
 
-
 def main():
     st.set_page_config(layout="wide")
+    st.set_option('client.showErrorDetails', False)
 
     st.markdown("""
         <style>

@@ -17,6 +17,8 @@ from sources.plots import plot_play_probabilities, plot_points, plot_win_probabi
 from sources.sql import query_db, create_sql_engine, get_current_week, get_existing_ids, update_running_game, update_week
 sql_engine = create_sql_engine()
 
+st.write(st.session_state)
+
 st.markdown("""
     <style>
         .custom-code {
@@ -62,11 +64,10 @@ def display_buttons(position):
 # Main Page
 st.title("NFL Predictor")
 
-if ("game" in st.query_params) and (not st.query_params['game'] == "None"):
-    selected_game = query_db(sql_engine, f"SELECT name FROM games WHERE game_id={st.query_params.game};")[0]['name']
+if "game" in st.query_params:
     st.session_state["choice"] = "Live Game"
-    st.session_state["game_name_selected"] = selected_game
-    st.query_params.game = "None"
+    st.session_state["game_name_selected"] = st.query_params.game
+    st.query_params = {}
 
 if "choice" not in st.session_state:
     st.session_state["choice"] = None

@@ -5,6 +5,7 @@ import dill
 from sources.plots import plot_win_probabilities
 from sources.sql import create_sql_engine, get_current_week, query_db
 from sources.long_queries import query_plays
+from streamlit_extras.switch_page_button import switch_page
 
 sql_engine = create_sql_engine()
 
@@ -55,15 +56,15 @@ st.write("")
 
 col1, col2, col3, col4, col5 = st.columns([1,1,0.5,0.5, 0.5])
 with col1:
-    st.header("Home team")
+    st.subheader("Home team")
 with col2:
-    st.header("Away team")
+    st.subheader("Away team")
 with col3:
-    st.header("Scheduled")
+    st.subheader("Scheduled")
 with col4:
-    st.header("Score")
+    st.subheader("Score")
 with col5:
-    st.header("Odds")
+    st.subheader("Odds")
 st.divider()
 
 with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
@@ -90,9 +91,8 @@ for game in games:
         if int(game['game_status'])>1:
             if int(game['game_status'])==2:
                 score = "("+str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])+")"
-                #st.page_link("streamlit/prediction.py", label=score, use_container_width=None)
                 st.markdown(
-                    f"""<b><a href="/prediction?game={game['name']}" style="font-size: 1.6em; color: inherit;" target="_self">{score}</a></b>""",
+                    f"""<b><a href="/prediction?game={game['game_id']}" style="font-size: 1.6em; color: inherit;" target="_self">{score}</a></b>""",
                     unsafe_allow_html=True,
                 )
             else:
