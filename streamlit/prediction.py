@@ -48,7 +48,7 @@ def update_running_game_dummy(game_id, sql_engine):
 
 @st.cache_resource
 def update_week_cached(week, season, game_type, _sql_engine):
-    update_week_dummy(week, season, game_type, sql_engine)
+    update_week(week, season, game_type, sql_engine)
 
 def display_buttons(position):
     if st.button("Update latest play", key=f"restart{position}"):
