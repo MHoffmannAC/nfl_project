@@ -10,7 +10,7 @@ sql_engine = create_sql_engine()
 
 current_week, current_season, current_game_type = get_current_week()
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def update_week_cached(week, season, game_type, _sql_engine):
     update_week(week, season, game_type, sql_engine)
 

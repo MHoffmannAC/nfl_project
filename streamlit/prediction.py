@@ -43,10 +43,8 @@ week, season, game_type = get_current_week()
 def update_week_dummy(week, season, game_type, sql_engine):
     #st.error("update_week is a DUMMY function, remember to change it!!")
     pass
-def update_running_game_dummy(game_id, sql_engine):
-    st.error("update_running_game is a DUMMY function, remember to change it!!")
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def update_week_cached(week, season, game_type, _sql_engine):
     update_week(week, season, game_type, sql_engine)
 
