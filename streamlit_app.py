@@ -38,10 +38,14 @@ def main():
             st.Page("streamlit/news.py", title="NewsBot", icon=":material/newspaper:"),
             st.Page("streamlit/drawing.py", title="LogoRecognizer", icon=":material/image_search:")
         ],
-        "More Information": [
+        "Information": [
             st.Page("streamlit/data.py", title="Data Acquisition", icon=":material/storage:"),
-            st.Page("streamlit/models.py", title="ML/AI models", icon=":material/dashboard:"),
-            st.Page("streamlit/feedback.py", title="Provide Feedback", icon=":material/feedback:")
+            st.Page("streamlit/models.py", title="ML/AI models", icon=":material/dashboard:")
+        ],
+        "More": [
+            st.Page("streamlit/chat.py", title="Chat", icon=":material/forum:"),
+            st.Page("streamlit/feedback.py", title="Provide Feedback", icon=":material/feedback:"),
+            st.Page("streamlit/login.py", title="User Login", icon=":material/lock_open:")
         ]
     })
 

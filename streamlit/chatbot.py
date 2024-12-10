@@ -137,7 +137,7 @@ with st.container():
 # Topic selection as a chat message
 def display_topic_buttons():
 
-    st.session_state.selected_topic = st.segmented_control(None, ["Rule Book", "Glossary", "News"], default=None, selection_mode="single")
+    st.session_state.selected_topic = st.segmented_control("Topic selection", ["Rule Book", "Glossary", "News"], default=None, selection_mode="single", label_visibility="collapsed")
 
     if st.session_state.selected_topic == "Rule Book":
         with st.spinner("Updating my rules knowledge, please wait."):
