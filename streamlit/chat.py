@@ -39,6 +39,7 @@ with col1:
                         if new_room_name not in server_state["rooms"]:
                             server_state["rooms"].append(new_room_name)
                             st.success(f"Room '{new_room_name}' created!")
+                            st.rerun()
                         else:
                             st.warning(f"Room '{new_room_name}' already exists!")
 
