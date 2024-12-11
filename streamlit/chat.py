@@ -108,7 +108,7 @@ with col2:
         for msg in server_state[room_key]:
             with cols[0]:
                 st.write(f"**{msg['nickname']}:** {msg['text']}")
-            if toggle_admin:
+            if is_admin_logged_in and toggle_admin:
                 with cols[1]:
                     if st.button("❌", key=f"delete_{msg['nickname']}_{msg['text']}"):
                         msg_to_delete = msg
