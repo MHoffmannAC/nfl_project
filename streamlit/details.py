@@ -451,7 +451,7 @@ def reset_navigation():
 
 # Tab selection
 tab = st.segmented_control(
-    options=["Teams", "Players", "Positions", "Colleges"],
+    options=["Teams", "Players", "Colleges", "Positions"],
     label="Select a category",
     default=st.session_state["chosen_tab"]
 )

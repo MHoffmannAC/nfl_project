@@ -4,7 +4,7 @@ st.header("Tool descriptions")
 
 st.write("On this page you can find a brief summary of the chosen approaches for each tool on this app. Please choose a tool from the following selection:")
 
-chosen_model = st.segmented_control("", ["PlayAnalyzer (play type)", "PlayAnalyzer (win probability)", "ChatBot", "NewsBot", "LogoRecognizer"], default=None, selection_mode="single")
+chosen_model = st.segmented_control("ModelSelection", ["PlayAnalyzer (play type)", "PlayAnalyzer (win probability)", "ChatBot", "NewsBot", "LogoRecognizer"], default=None, selection_mode="single", label_visibility="collapsed")
 
 if chosen_model == "ChatBot":
     st.markdown("""A langchain model is used for conversation. The model is trained on three different kinds of input:
