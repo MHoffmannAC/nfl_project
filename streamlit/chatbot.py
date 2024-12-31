@@ -40,8 +40,8 @@ faiss_news = "./ressources/chatbot/faiss_news"
 
 @st.cache_resource(show_spinner=False)
 def load_vector_db(folder_path):
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model,
-                                       cache_folder="./ressources/chatbot/embeddings")
+    embeddings = HuggingFaceEmbeddings(model_name=embedding_model) #,
+                                       #cache_folder="./ressources/chatbot/embeddings")
     return FAISS.load_local(folder_path, embeddings, allow_dangerous_deserialization=True)
 
 # memory
