@@ -3,6 +3,8 @@ import instaloader
 from groq import Groq
 import requests
 
+st.error("Currently the instaloader has a bug...")
+
 def fetch_latest_images(username, X=5):
     L = instaloader.Instaloader()
     profile = instaloader.Profile.from_username(L.context, username)

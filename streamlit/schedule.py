@@ -10,6 +10,8 @@ sql_engine = create_sql_engine()
 
 current_week, current_season, current_game_type = get_current_week()
 
+st.write(current_week, current_season, current_game_type)
+
 @st.cache_resource(show_spinner=False)
 def update_week_cached(week, season, game_type, _sql_engine):
     update_week(week, season, game_type, sql_engine)
@@ -43,11 +45,17 @@ game_type = st.radio("Game Type", ["Regular", "Postseason"], index=0 if current_
 
 col1, _ = st.columns([1,4])
 with col1:
-    week_options = list(range(1, 19)) if game_type == "Regular" else ["SuperBowl", "ConfChamp", "DivRound", "WildCard"]
-    week = st.selectbox("Week", options=week_options, index=week_options.index(current_week))
+    week_mapping= {"SuperBowl": 5, "ConfChamp": 3, "DivRound": 2, "WildCard": 1}
+    inverse_week_mapping = {v: k for k, v in week_mapping.items()}
+
+    if game_type == "Regular":
+        week_options = list(range(1, 19))
+        week = st.selectbox("Week", options=week_options, index=week_options.index(current_week))
+    else:
+        week_options = ["SuperBowl", "ConfChamp", "DivRound", "WildCard"]
+        week = st.selectbox("Week", options=week_options, index=week_options.index(inverse_week_mapping[current_week]))
 
     if (type(week)==str):
-        week_mapping= {"SuperBowl": 5, "ConfChamp": 3, "DivRound": 2, "WildCard": 1}
         week = week_mapping[week]
 
 game_type = 'regular-season' if game_type=='Regular' else 'post-season'

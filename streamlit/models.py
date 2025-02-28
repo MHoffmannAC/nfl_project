@@ -22,7 +22,7 @@ elif chosen_model == "NewsBot":
     st.write("News from the last 10 days can be chosen. The underlying llm model is")
     st.code("""llm = ChatGroq(groq_api_key={GROQ_TOKEN},
                 model_name="mixtral-8x7b-32768")""", language="python")
-    st.write("An llm-chain is then used in combination with a prompt template to instruct the llm how do respong")
+    st.write("An llm-chain is then used in combination with a prompt template to instruct the llm how do respond.")
     st.code("LLMChain(llm=llm, prompt={prompt})", language="python")
 
 elif chosen_model == "PlayAnalyzer (play type)":

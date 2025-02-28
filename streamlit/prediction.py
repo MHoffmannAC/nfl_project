@@ -115,7 +115,7 @@ elif st.session_state["choice"] == "User Input (Full)":
     if "play_data" in st.session_state:
         play_data = st.session_state["play_data"]
     else:
-        play_data = {'quarter': 1, 'clock_seconds': 900, 'offenseAtHome': 1, 'possessionChange': 0, 'next_down': 1, 'next_distance': 10, 'next_yardsToEndzone': 70, 'season': 2024, 'game_type': 'regular-season', 'week': 1, 'homeScore': 0, 'awayScore': 0, 'standing_home_overall_win': 0, 'standing_home_home_win': 0, 'standing_home_road_win': 0, 'standing_home_overall_loss': 0, 'standing_home_home_loss': 0, 'standing_home_road_loss': 0, 'standing_away_overall_win': 0, 'standing_away_home_win': 0, 'standing_away_road_win': 0, 'standing_away_overall_loss': 0, 'standing_away_home_loss': 0, 'standing_away_road_loss': 0, 'homeAbr': 'ATL', 'awayAbr': 'BUF', 'homeName': 'Atlanta Falcons', 'awayName': 'Buffalo Bills', 'totalTimeLeft': 3600, 'completionRate': 0.7, 'passToRushRatio': 1}
+        play_data = {'quarter': 1, 'clock_seconds': 900, 'offenseAtHome': 1, 'possessionChange': 0, 'down': 1, 'next_down': 1, 'distance': 10, 'next_distance': 10, 'yardsToEndzone': 70, 'next_yardsToEndzone': 70, 'season': 2024, 'game_type': 'regular-season', 'week': 1, 'homeScore': 0, 'awayScore': 0, 'scoreDiff': 0, 'standing_home_overall_win': 0, 'standing_home_home_win': 0, 'standing_home_road_win': 0, 'standing_home_overall_loss': 0, 'standing_home_home_loss': 0, 'standing_home_road_loss': 0, 'standing_away_overall_win': 0, 'standing_away_home_win': 0, 'standing_away_road_win': 0, 'standing_away_overall_loss': 0, 'standing_away_home_loss': 0, 'standing_away_road_loss': 0, 'homeAbr': 'ATL', 'awayAbr': 'BUF', 'homeName': 'Atlanta Falcons', 'awayName': 'Buffalo Bills', 'totalTimeLeft': 3600, 'completionRate': 0.7, 'passToRushRatio': 1}
 
 if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["choice"] == "Live Game") and (play_data['next_down']>0)):
 
@@ -340,6 +340,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
             plot_points(plays_df['totalTimeLeft'], plays_df['homeScore'], plays_df['awayScore'], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
     else:
         st.subheader("Win probabilities:")
+        play_data = pd.Series(play_data)
         probabilities = nn_regressor.predict(pd.DataFrame(play_data).T)
         st.write(f"Home team win probability: {np.round(probabilities[0][0]*100)}%")
         st.write(f"Away team win probability: {np.round(probabilities[0][1]*100)}%")
