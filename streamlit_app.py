@@ -46,8 +46,8 @@ def main():
             st.Page("streamlit/chat.py", title="Chat", icon=":material/forum:"),
             st.Page("streamlit/feedback.py", title="Provide Feedback", icon=":material/feedback:"),
             st.Page("streamlit/login.py", title="User Login", icon=":material/lock_open:"),
-            st.Page("streamlit/game.py", title="Game", icon=":material/sports_esports:"),
-            st.Page("streamlit/memes.py", title="Memes", icon=":material/sports_esports:")
+            st.Page("streamlit/game.py", title="Games", icon=":material/sports_esports:"),
+            st.Page("streamlit/memes.py", title="Memes (broken)", icon=":material/photo_library:")
         ]
     })
 
