@@ -43,8 +43,11 @@ if headline is not None:
         st.markdown("---")
         st.subheader(headline)
         styled_summary = summary_chain.run({"text": story, "style": style})
-        st.write(styled_summary)
+        st.code(styled_summary, wrap_lines=True, language=None)
 
+    if st.toggle("Display original news"):
+        st.write(headline)
+        st.write(story)
 st.markdown("---")
 
 if st.button("Update News"):
