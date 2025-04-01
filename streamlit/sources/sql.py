@@ -419,33 +419,23 @@ def update_game(game_id, game_df, sql_engine):
     params = game_df.to_dict()
     params["game_id"] = game_id
 
-    print(params)
-    print(query)
-
     with sql_engine.connect() as sql_connection:
         sql_connection.execute(query, params)
         sql_connection.commit()
 
 def update_week(week, season, game_type, sql_engine):
-    print(week, season, game_type)
     games_in_db = [i[0] for i in sql_engine.connect().execute(text(f"SELECT game_id FROM games WHERE week='{week}' AND season='{season}' AND game_type='{game_type}' ORDER BY game_id;")).fetchall()]
     game_statuses_in_db = [i[0] for i in sql_engine.connect().execute(text(f"SELECT game_status FROM games WHERE week='{week}' AND season='{season}' AND game_type='{game_type}' ORDER BY game_id;")).fetchall()]
-    print("debug")
     if(len(games_in_db)>0):
         url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={season}&seasontype={2 if game_type == 'regular-season' else 3}&week={week}"
-        print(url)
         response = requests.get(url)
         data = response.json()
         games_df = load_game_data(data['events'], sql_engine, asDataFrame=True, checkExistence=False)
-        print(games_df)
         if(len(games_df)>0):
             for game_id, status in zip(games_in_db, game_statuses_in_db):
                 update_game(game_id, games_df.loc[game_id, :], sql_engine)
                 if(games_df.loc[game_id, 'game_status']>status):
                     print(f"status of game {game_id} changed.")
-                    #with sql_engine.connect() as sql_connection:
-                    #    sql_connection.execute(text(f"UPDATE games SET game_status={games_df.loc[game_id, 'game_status']} WHERE game_id={game_id};"))
-                    #    sql_connection.commit()
                     plays_df, _ = get_plays([game_id], sql_engine)
                     if(len(plays_df)>0):
                         append_new_rows(plays_df, 'plays', sql_engine, 'play_id')

@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import dill
 
+from datetime import datetime
+import pytz
+from tzlocal import get_localzone
+
 from sources.plots import plot_win_probabilities
 from sources.sql import create_sql_engine, get_current_week, query_db, update_week
 from sources.long_queries import query_plays
@@ -43,6 +47,10 @@ with col1:
     season = st.selectbox("Season", options=all_seasons, index=all_seasons.index(current_season))
     
     st.write(st.session_state["game_type"])
+
+
+col1, col2, col3 = st.columns([1,3,1])
+with col1:
     game_type = st.radio("Game Type", ["Regular", "Postseason"], index=0 if st.session_state["game_type"]=="regular-season" else 1, horizontal=True)
     
     game_type = 'regular-season' if game_type=='Regular' else 'post-season'
@@ -53,7 +61,6 @@ with col1:
 
     week_mapping= {"SuperBowl": 5, "ConfChamp": 3, "DivRound": 2, "WildCard": 1}
     inverse_week_mapping = {v: k for k, v in week_mapping.items()}
-
     if game_type == "regular-season":
         week_options = list(range(1, 19))
         week = st.selectbox("Week", options=week_options, index=week_options.index(current_week))
@@ -102,13 +109,18 @@ for game in games:
     with col2:
         st.subheader(teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
     with col3:
+        game_date = pytz.utc.localize(game['date'])
+        game_date_local = game_date.astimezone(get_localzone())
+        print(game_date_local.strftime("%Y-%m-%d %H:%M:%S"))
+
         if int(game['game_status'])==1:
-            st.subheader(game['date'])
+            st.subheader(game_date_local)
         elif int(game['game_status'])==2:
             quarter = {1: "1st Qtr", 2: "2nd Qtr", 3: "3rd Qtr", 4: "4th Qtr", 5: "OT"}
             st.subheader(quarter[plays.iloc[-1]['quarter']])
         else:
             st.subheader("Final")
+
     with col4:
         if int(game['game_status'])>1:
             if int(game['game_status'])==2:
