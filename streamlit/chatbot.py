@@ -13,9 +13,10 @@ from langchain.chains import ConversationalRetrievalChain
 #hf_model = "meta-llama/Llama-3.2-3B-Instruct"
 #hf_model = "mistralai/Mistral-7B-Instruct-v0.3"
 #llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
+# "mixtral-8x7b-32768"
 llm = ChatGroq(temperature=0,
                groq_api_key=st.secrets['GROQ_TOKEN'],
-               model_name="mixtral-8x7b-32768")
+               model_name="gemma2-9b-it")
 
 # prompt
 template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). No need to mention explicitly something like "Based on the provided context". If you don't know the answer based on the provided context, just say "I don't know the answer.".

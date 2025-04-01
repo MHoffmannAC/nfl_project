@@ -18,7 +18,7 @@ def create_llm():
         )
     )
     llm = ChatGroq(groq_api_key=st.secrets['GROQ_TOKEN'],
-                model_name="mixtral-8x7b-32768")
+                    model_name="gemma2-9b-it")
     summary_chain = LLMChain(llm=llm, prompt=summary_prompt)
     return summary_chain
 

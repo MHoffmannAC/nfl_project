@@ -41,7 +41,7 @@ with col1:
 
     # Specify canvas parameters in application
     st.session_state["drawing_mode"] = st.selectbox(
-        "", ("freedraw", "line", "rect", "circle", "transform")
+        "Drawing mode", ("freedraw", "line", "rect", "circle", "transform"), label_visibility="collapsed"
     )
 
     st.session_state["stroke_width"] = st.slider("Stroke width: ", 1, 25, 3)
