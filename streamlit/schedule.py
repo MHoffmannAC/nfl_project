@@ -16,6 +16,9 @@ def update_week_cached(week, season, game_type, _sql_engine):
 
 with st.spinner("Updating Schedule..."):
     update_week_cached(current_week, current_season, current_game_type, sql_engine)
+    
+if "game_type" not in st.session_state:
+    st.session_state["game_type"] = current_game_type
 
 st.markdown("""
     <style>
@@ -34,19 +37,24 @@ st.markdown("""
 
 st.title("Schedule")
 
-col1, _ = st.columns([1,4])
+col1, col2, col3 = st.columns([1,3,1])
 with col1:
     all_seasons = [i['season'] for i in query_db(sql_engine, "SELECT Distinct(season) FROM games ORDER BY season DESC;")]
     season = st.selectbox("Season", options=all_seasons, index=all_seasons.index(current_season))
     
-game_type = st.radio("Game Type", ["Regular", "Postseason"], index=0 if current_game_type=="regular-season" else 1, horizontal=True)
+    st.write(st.session_state["game_type"])
+    game_type = st.radio("Game Type", ["Regular", "Postseason"], index=0 if st.session_state["game_type"]=="regular-season" else 1, horizontal=True)
+    
+    game_type = 'regular-season' if game_type=='Regular' else 'post-season'
+    
+    if st.session_state["game_type"] != game_type:
+        st.session_state["game_type"] = game_type
+        st.rerun()
 
-col1, _ = st.columns([1,4])
-with col1:
     week_mapping= {"SuperBowl": 5, "ConfChamp": 3, "DivRound": 2, "WildCard": 1}
     inverse_week_mapping = {v: k for k, v in week_mapping.items()}
 
-    if game_type == "Regular":
+    if game_type == "regular-season":
         week_options = list(range(1, 19))
         week = st.selectbox("Week", options=week_options, index=week_options.index(current_week))
     else:
@@ -55,9 +63,11 @@ with col1:
 
     if (type(week)==str):
         week = week_mapping[week]
-
-game_type = 'regular-season' if game_type=='Regular' else 'post-season'
-
+with col3:
+    if st.button("Update standings"):
+        with st.spinner("Updating Schedule..."):
+            print(week, season, game_type)
+            update_week(week, season, game_type, sql_engine)
 
 games = query_db(sql_engine, f"SELECT * FROM games WHERE season={season} AND week={week} AND game_type='{game_type}' ORDER BY date;")
 
