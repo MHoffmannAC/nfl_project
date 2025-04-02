@@ -1,6 +1,7 @@
 import random
 import streamlit as st
 from pyfiglet import Figlet
+import textwrap
 
 
 def initial_setup():
@@ -12,6 +13,10 @@ def initial_setup():
         st.session_state["figure"] = "hangman"
     if "figlet" not in st.session_state:
         st.session_state["figlet"] = "ansi_regular"
+    if "input_feedback" not in st.session_state:    
+        st.session_state["input_feedback"] = ""
+    if "input_text" not in st.session_state:    
+        st.session_state["input_text"] = ""
 
 def cleaned_solution(solution):
     return solution.replace('Ö', 'OE').replace('Ü', 'UE').replace('Ä', 'AE').replace(",", "").replace(".", "").replace("!", "").replace("?", "").replace(":", "").replace(";", "").replace("-", "").replace("_", " ").replace("\"", "").replace(")","").replace("(", "").replace("\n", "").strip()
@@ -19,10 +24,19 @@ def cleaned_solution(solution):
 def refresh():
     del st.session_state["solution"]
     del st.session_state["remaining_guesses"]
-    del st.session_state["language"]
-    del st.session_state["difficulty"]
-    del st.session_state["figure"]
-    del st.session_state["figlet"]
+    del st.session_state["guessed_word_so_far"]
+    del st.session_state["possible_guesses"]
+    del st.session_state["wrong_guesses"]
+    del st.session_state["correct_guesses"]
+    del st.session_state["letters_to_guess"]
+    del st.session_state["input_feedback"]
+    del st.session_state["input_text"]   
+    del st.session_state["reset_flag"]
+
+    #del st.session_state["language"]
+    #del st.session_state["difficulty"]
+    #del st.session_state["figure"]
+    #del st.session_state["figlet"]
 
 def settings_display():
 
@@ -51,7 +65,6 @@ def settings_display():
     lang_short = next((key for key, value in lang_dict.items() if value.get("lang_full") == language), None)
     if lang_short != st.session_state["language"]:
         st.session_state["language"] = lang_short
-
         st.rerun()
     
     st.write("")
@@ -69,13 +82,119 @@ def settings_display():
     st.write("")
 
     if st.button("Start Game"):
-        st.write("test")
+        initialize_game()
+
+def initialize_game():
+    rand_func, rand_args, rand_kwargs = lang_dict[st.session_state["language"]]['difficulties'][st.session_state["difficulty"]]
+    st.session_state["solution"] = cleaned_solution(rand_func(*rand_args, **rand_kwargs).upper())
+    st.session_state["remaining_guesses"] = 6
+    st.session_state["guessed_word_so_far"] = "_ " * len(st.session_state["solution"])
+    st.session_state["possible_guesses"] = ["A B C D E F G H I", "J K L M N O P Q R", "S T U V W X Y Z"]
+    st.session_state["wrong_guesses"] = []
+    st.session_state["correct_guesses"] = []
+    st.session_state["letters_to_guess"] = st.session_state["guessed_word_so_far"].count("_")
+    if(" " in st.session_state["solution"]):
+        for i in range(len(st.session_state["solution"])):
+            if(st.session_state["solution"][i] == " "):
+                st.session_state["guessed_word_so_far"]=st.session_state["guessed_word_so_far"][:2*i]+" "+st.session_state["guessed_word_so_far"][2*i+1:]
+    st.rerun()
 
 def game_display():
     st.title("Hangman")
+    space_needed=max(len(lang_dict[st.session_state['language']]['msg_guesses_left'][1].format(num_guesses=st.session_state["remaining_guesses"]))+10,len(st.session_state["guessed_word_so_far"])+5)
+    st.write("")
+
+    current_figure = figures_lines[st.session_state['figure']][6 - st.session_state["remaining_guesses"]]
+
+    game_display = "\n".join([
+        " " * space_needed + current_figure[0],
+        st.session_state["guessed_word_so_far"].ljust(space_needed) + current_figure[1],
+        " " * space_needed + current_figure[2],
+        lang_dict[st.session_state['language']]['msg_avail_lett'].ljust(space_needed) + current_figure[3],
+        st.session_state["possible_guesses"][0].ljust(space_needed) + current_figure[4],
+        st.session_state["possible_guesses"][1].ljust(space_needed) + current_figure[5],
+        st.session_state["possible_guesses"][2].ljust(space_needed) + current_figure[6],
+        " " * space_needed + current_figure[7],
+        lang_dict[st.session_state['language']]['msg_guesses_left'][1].format(num_guesses=st.session_state["remaining_guesses"]) if st.session_state["remaining_guesses"] > 1 
+        else lang_dict[st.session_state['language']]['msg_guesses_left'][0],
+        ""
+    ])
+    
+    st.code(game_display)
+
+    # workaround to empty input field after guess
+    if "input_text" not in st.session_state:
+        st.session_state["input_text"] = ""
+    if "reset_flag" not in st.session_state:
+        st.session_state["reset_flag"] = False  
+    if st.session_state["reset_flag"]:
+        st.session_state["input_text"] = ""  
+        st.session_state["reset_flag"] = False  
+
+    st.text_input(lang_dict[st.session_state['language']]['msg_choose_lett'], key="input_text").upper()
+    if st.button("Guess"):
+        evaluate_guess()
+        
+    st.write(st.session_state["input_feedback"])
+
+    
+
+def evaluate_guess():
+    st.session_state["reset_flag"] = True
+    user_guess = st.session_state["input_text"]
+    if(not (  (len(user_guess)==1 and user_guess.isalpha())
+                or
+                (len(user_guess)==len(st.session_state["solution"]))
+                )):
+        st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_allowed_input'])
+    elif(user_guess in st.session_state["wrong_guesses"] or user_guess in st.session_state["correct_guesses"]):
+        st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_repeat'])
+    elif(len(user_guess)==len(st.session_state["solution"])):
+        if(user_guess==st.session_state["solution"]):
+            st.session_state["guessed_word_so_far"]=st.session_state["solution"]
+        else:
+            st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_not_solution'].format(user_guess=user_guess))
+            st.session_state["remaining_guesses"]-=1
+    else:
+        if(user_guess in st.session_state["solution"]):
+            for i in range(len(st.session_state["solution"])):
+                if(st.session_state["solution"][i] == user_guess):
+                    st.session_state["guessed_word_so_far"]=st.session_state["guessed_word_so_far"][:2*i]+user_guess+st.session_state["guessed_word_so_far"][2*i+1:]
+            st.session_state["correct_guesses"].append(user_guess)
+            st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_correct_lett'].format(user_guess=user_guess))
+        else:
+            st.session_state["wrong_guesses"].append(user_guess)
+            st.session_state["remaining_guesses"]-=1
+            st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_wrong_lett'].format(user_guess=user_guess))
+        for i in range(len(st.session_state["possible_guesses"])):
+            st.session_state["possible_guesses"][i] = st.session_state["possible_guesses"][i].replace(user_guess," ")
+    st.session_state["letters_to_guess"] = st.session_state["guessed_word_so_far"].count("_")
     
 def final_display():
     st.title("Game Results")
+    if(st.session_state["remaining_guesses"]>0):
+      st.write("")
+      st.code(textwrap.dedent(Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_win']).rstrip()), language=None)
+      st.write("")
+      st.write(lang_dict[st.session_state['language']]['msg_success'].format(solution=st.session_state["solution"]))
+    else:
+      st.code(textwrap.dedent(Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_lost']).rstrip()), language=None)
+      st.code(textwrap.dedent(figures[st.session_state['figure']][6]), language=None)
+      st.write("")
+      st.write(lang_dict[st.session_state['language']]['msg_reveal'].format(solution=st.session_state["solution"]))
+    st.write("")
+    
+    if st.button("Restart"):
+        refresh()
+        initialize_game()
+        st.rerun()
+    #user_input = input(lang_dict[st.session_state['language']]['msg_restart_quit'])
+    #if(user_input == "r"):
+    #  return True
+    #elif(user_input == "q"):
+    #  return False
+
+    
 figures = {
 
         'hangman': ['''
@@ -121,13 +240,13 @@ figures = {
     /    |
         |
     =========''', '''
-                +---+
-                |   |
-                O   |
-            /|\  |
-            / \  |
-                    |
-            ========='''],
+      +------+
+       |   |
+       O   |
+      /|\  |
+      / \  |
+           |
+    ========='''],
 
 
         'flowers': [r'''
@@ -290,8 +409,8 @@ lang_dict = {
         'msg_avail_lett': "Available letters:",
         'msg_avail_lang': "Available languages:",
         'msg_avail_figs': "Available illustrations:",
-        'msg_guesses_left': ["You have one wrong guess left",
-                             "You have {num_guesses} wrong guesses left"],
+        'msg_guesses_left': ["You have one life left",
+                             "You have {num_guesses} lives left"],
         'msg_choose_lett': "Please choose a letter or guess the solution   ",
         'msg_allowed_input': "Please enter a single letter or the full solution",
         'msg_repeat': "You already guessed this letter",
@@ -339,8 +458,8 @@ lang_dict = {
         'msg_avail_lett': "Mögliche Buchstaben:",
         'msg_avail_lang': "Mögliche Sprachen:",
         'msg_avail_figs': "Mögliche Illustrationen:",
-        'msg_guesses_left': ["Du hast noch einen Fehlversuch",
-                             "Du hast noch {num_guesses} Fehlversuche über"],
+        'msg_guesses_left': ["Du hast noch ein Leben",
+                             "Du hast noch {num_guesses} Leben über"],
         'msg_choose_lett': "Bitte wähle einen Buchstaben oder rate die Lösung  ",
         'msg_allowed_input': "Bitte gib einen einzelnen Buchstaben oder die komplette Lösung ein",
         'msg_repeat': "Dieser Buchstabe wurde bereits zuvor geraten",

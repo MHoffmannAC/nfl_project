@@ -25,7 +25,7 @@ pix = page.get_pixmap()
 img = Image.open(BytesIO(pix.tobytes("ppm")))  # Convert to PIL image
 
 # Display the image
-st.image(img, caption=f"Page {st.session_state['wbs_page']}", use_column_width=True)
+st.image(img, caption=f"Page {st.session_state['wbs_page']}", use_container_width=True)
 
 
 page_selection = st.select_slider("Select a page:", options=list(range(1, num_pages + 1)), value=st.session_state["wbs_page"], label_visibility="collapsed", format_func=lambda x: "")
