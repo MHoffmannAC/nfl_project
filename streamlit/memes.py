@@ -3,8 +3,6 @@ import instaloader
 from groq import Groq
 import requests
 
-st.error("Currently the instaloader has a bug...")
-
 def fetch_latest_images(username, X=5):
     L = instaloader.Instaloader()
     profile = instaloader.Profile.from_username(L.context, username)
@@ -39,16 +37,20 @@ def get_image_caption(image_url, caption):
         stream=False,
         stop=None,
     )
-    
-    # Extract the generated message
     return completion.choices[0].message.content
 
 st.title("Memes from nflmemes_ig 'explained' by an AI")
 
-# Example usage
-username = 'nflmemes_ig'  # Replace with actual Instagram username
-latest_images = fetch_latest_images(username, X=10)
+username = 'nflmemes_ig' 
 
+
+
+st.error("Currently the instaloader has a bug...")
+latest_images = []
+
+
+
+#latest_images = fetch_latest_images(username, X=10)
 # Generate captions for each image using Groq
 for post in latest_images:
     image_url = post['image_url']
