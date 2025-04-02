@@ -19,10 +19,9 @@ if game == "Hangman":
     hangman.initial_setup()   
     
     if "solution" not in st.session_state:
-         hangman.settings_display()
-        
+         hangman.settings_display()        
     else:
-        if st.session_state["remaining_guesses"] == 0:
+        if st.session_state["remaining_guesses"] == 0 or st.session_state["letters_to_guess"] == 0:
             hangman.final_display()
         else:
             hangman.game_display()

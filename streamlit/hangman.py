@@ -134,7 +134,7 @@ def game_display():
     st.text_input(lang_dict[st.session_state['language']]['msg_choose_lett'], key="input_text").upper()
     if st.button("Guess"):
         evaluate_guess()
-        
+        st.rerun()
     st.write(st.session_state["input_feedback"])
 
     
@@ -186,7 +186,7 @@ def final_display():
     
     if st.button("Restart"):
         refresh()
-        initialize_game()
+        initial_setup()
         st.rerun()
     #user_input = input(lang_dict[st.session_state['language']]['msg_restart_quit'])
     #if(user_input == "r"):
