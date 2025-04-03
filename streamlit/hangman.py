@@ -89,7 +89,6 @@ def settings_display():
 def initialize_game():
     query_string, column_name = lang_dict[st.session_state["language"]]['difficulties'][st.session_state["difficulty"]]
     dirty_solution = random.choice(query_db(sql_engine, query_string))[column_name]
-    print(dirty_solution)
     st.session_state["solution"] = cleaned_solution(dirty_solution.upper())
     st.session_state["remaining_guesses"] = 6
     st.session_state["guessed_word_so_far"] = "_ " * len(st.session_state["solution"])
@@ -178,18 +177,26 @@ def final_display():
     st.title("Game Results")
     if(st.session_state["remaining_guesses"]>0):
       st.write("")
-      st.code(textwrap.dedent(Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_win']).rstrip()), language=None)
-      st.write("")
-      st.write(lang_dict[st.session_state['language']]['msg_success'].format(solution=st.session_state["solution"]))
+      st.code(
+            Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_win']).rstrip()
+            + "\n\n" 
+            + lang_dict[st.session_state['language']]['msg_success'].format(solution=st.session_state["solution"]),
+            language=None
+              )
     else:
-      st.code(textwrap.dedent(Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_lost']).rstrip()), language=None)
-      st.code(textwrap.dedent(figures[st.session_state['figure']][6]), language=None)
-      st.write("")
-      st.write(lang_dict[st.session_state['language']]['msg_reveal'].format(solution=st.session_state["solution"]))
+      st.code(
+          Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_lost']).rstrip()
+          + "\n\n"
+          + figures[st.session_state['figure']][6]
+          + "\n\n"
+          + lang_dict[st.session_state['language']]['msg_reveal'].format(solution=st.session_state["solution"]),
+          language=None
+             )
+
     st.write("")
     
+    refresh()
     if st.button("Restart"):
-        refresh()
         initial_setup()
         st.rerun()
     #user_input = input(lang_dict[st.session_state['language']]['msg_restart_quit'])

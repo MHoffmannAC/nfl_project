@@ -79,11 +79,6 @@ def find_checked_and_expanded(tree, checked_value):
 
     return checked_nodes, expanded_nodes
 
-
-
-
-
-
 nodes = [
     {"label": "General", "value": "general"},
     {"label": "AFC", "value": "afc", "children": [
@@ -185,16 +180,20 @@ with col2:
 
     if not "nickname" in st.session_state:
         nickname_key = f"nickname_{selected_room_value}"
-        st.session_state["nickname"] = st.text_input("Your nickname", key=nickname_key)
-        if st.session_state["nickname"] == "Admin" and (not is_admin_logged_in):
-            st.error("Please use a different name!")
-            st.session_state["nickname"] = None
-            st.stop()
-        elif not st.session_state["nickname"]:
-            st.warning("Please enter a nickname to join the room.")
-            st.stop()
+        nickname_input = st.text_input("Your nickname", key=nickname_key)
+        if nickname_input != "":
+            st.session_state["nickname"] = nickname_input
+            if st.session_state["nickname"] == "Admin" and (not is_admin_logged_in):
+                st.error("Please use a different name!")
+                st.session_state["nickname"] = None
+                st.stop()
+            elif not st.session_state["nickname"]:
+                st.warning("Please enter a nickname to join the room.")
+                st.stop()
+            else:
+                st.rerun()
 
-    if st.session_state["nickname"]:
+    else:
         message_key = f"message_input_{selected_room_value}"
         def send_message():
             message_text = st.session_state.get(message_key, "").strip()
@@ -207,7 +206,7 @@ with col2:
         st.text_input("Message", key=message_key, on_change=send_message)
 
     # Display chat history
-    st.subheader("Chat:")
+    st.subheader("Chat history:")
     with server_state_lock[room_key]:
         msg_to_delete = None
         
