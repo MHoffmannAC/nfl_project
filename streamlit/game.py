@@ -5,7 +5,7 @@ from pyfiglet import Figlet
 
 st.title("Collection of NFL-themed Games")
 
-game = st.segmented_control("Select a game", ["Hangman", "Sudoku"])
+game = st.segmented_control("Select a game", ["Hangman", "Sudoku"], default="Hangman")
 
 if game == "Sudoku":
     st.header("2025")
