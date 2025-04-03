@@ -26,14 +26,15 @@ st.markdown("""
             border-radius: 5px !important;
             font-family: 'Courier New', Courier, monospace !important;
         }
-    </style>
-    <style>
         .st-emotion-cache-1jyaehf {
             color: #ffffff !important;  /* White text */
             background-color: #800020;  /* Dark background */
             padding: 3px 6px !important;
             border-radius: 5px !important;
             font-family: 'Courier New', Courier, monospace !important;
+        }
+        .st-emotion-cache-mka0c2 {
+            color: #ffffff !important;  /* White text */
         }
     </style>
 """, unsafe_allow_html=True)

@@ -2,25 +2,6 @@ import streamlit as st
 from streamlit_server_state import server_state, server_state_lock
 from streamlit_tree_select import tree_select
 
-st.markdown("""
-    <style>
-        /* Change the color of the text with class 'rct-title' */
-        .rct-title {
-            color: #000000 !important; /* Use your preferred color (e.g., Tomato Red) */
-            font-weight: bold; /* Optional: Make it bold */
-            font-size: 16px; /* Optional: Adjust font size */
-        }
-
-        /* Optionally, style checkboxes or other elements */
-        .rct-checkbox {
-            border: 2px solid #ff6347 !important; /* Change checkbox border color */
-        }
-        .rct-icon-check {
-            color: #ff6347 !important; /* Change checkmark color */
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
 # Initialize "rooms" in server_state if not already present
 if "rooms" not in server_state:
     with server_state_lock["rooms"]:
@@ -152,7 +133,7 @@ col1, col2 = st.columns([1, 4])
 
 with col1:
     st.subheader("Rooms")
-
+    
     selected_nodes = tree_select(nodes, check_model="leaf", no_cascade=True, show_expand_all=True, expand_on_click=False, checked=[node for node in checked_nodes], expanded=expanded_nodes)
 
     current_checked = selected_nodes.get("checked", [])
