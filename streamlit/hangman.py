@@ -2,7 +2,9 @@ import random
 import streamlit as st
 from pyfiglet import Figlet
 import textwrap
+from sources.sql import create_sql_engine, query_db 
 
+sql_engine = create_sql_engine()
 
 def initial_setup():
     if "language" not in st.session_state:
@@ -85,8 +87,10 @@ def settings_display():
         initialize_game()
 
 def initialize_game():
-    rand_func, rand_args, rand_kwargs = lang_dict[st.session_state["language"]]['difficulties'][st.session_state["difficulty"]]
-    st.session_state["solution"] = cleaned_solution(rand_func(*rand_args, **rand_kwargs).upper())
+    query_string, column_name = lang_dict[st.session_state["language"]]['difficulties'][st.session_state["difficulty"]]
+    dirty_solution = random.choice(query_db(sql_engine, query_string))[column_name]
+    print(dirty_solution)
+    st.session_state["solution"] = cleaned_solution(dirty_solution.upper())
     st.session_state["remaining_guesses"] = 6
     st.session_state["guessed_word_so_far"] = "_ " * len(st.session_state["solution"])
     st.session_state["possible_guesses"] = ["A B C D E F G H I", "J K L M N O P Q R", "S T U V W X Y Z"]
@@ -120,7 +124,7 @@ def game_display():
         ""
     ])
     
-    st.code(game_display)
+    st.code(game_display, language=None)
 
     # workaround to empty input field after guess
     if "input_text" not in st.session_state:
@@ -131,7 +135,7 @@ def game_display():
         st.session_state["input_text"] = ""  
         st.session_state["reset_flag"] = False  
 
-    st.text_input(lang_dict[st.session_state['language']]['msg_choose_lett'], key="input_text").upper()
+    st.text_input(lang_dict[st.session_state['language']]['msg_choose_lett'], key="input_text")
     if st.button("Guess"):
         evaluate_guess()
         st.rerun()
@@ -141,7 +145,7 @@ def game_display():
 
 def evaluate_guess():
     st.session_state["reset_flag"] = True
-    user_guess = st.session_state["input_text"]
+    user_guess = st.session_state["input_text"].upper()
     if(not (  (len(user_guess)==1 and user_guess.isalpha())
                 or
                 (len(user_guess)==len(st.session_state["solution"]))
@@ -222,25 +226,25 @@ figures = {
     +---+
     |   |
     O   |
-    /|   |
+   /|   |
         |
         |
     =========''', '''
     +---+
     |   |
     O   |
-    /|\  |
+   /|\  |
         |
         |
     =========''', '''
     +---+
     |   |
     O   |
-    /|\  |
-    /    |
+   /|\  |
+   /    |
         |
     =========''', '''
-      +------+
+    +------+
        |   |
        O   |
       /|\  |
@@ -250,35 +254,35 @@ figures = {
 
 
         'flowers': [r'''
-            wWWWw               wWWWw
+          wWWWw               wWWWw
     vVVVv (___) wWWWw         (___)  vVVVv
     (___)  ~Y~  (___)  vVVVv   ~Y~   (___)
-        ~Y~   \|    ~Y~   (___)    |/    ~Y~
-        \|   \ |/   \| /  \~Y~/   \|    \ |/
+     ~Y~   \|    ~Y~   (___)    |/    ~Y~
+     \|   \ |/   \| /  \~Y~/   \|    \ |/
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     r'''
-            wWWWw
+          wWWWw
     vVVVv (___) wWWWw                vVVVv
     (___)  ~Y~  (___)  vVVVv         (___)
-        ~Y~   \|    ~Y~   (___)    |     ~Y~
-        \|   \ |/   \| /  \~Y~/    |    \ |/
+     ~Y~   \|    ~Y~   (___)    |     ~Y~
+     \|   \ |/   \| /  \~Y~/    |    \ |/
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     r'''
-            wWWWw
-            (___) wWWWw                vVVVv
-            ~Y~  (___)  vVVVv         (___)
-            \|    ~Y~   (___)    |     ~Y~
-        |   \ |/   \| /  \~Y~/    |    \ |/
+          wWWWw
+          (___) wWWWw                vVVVv
+           ~Y~  (___)  vVVVv         (___)
+           \|    ~Y~   (___)    |     ~Y~
+      |   \ |/   \| /  \~Y~/    |    \ |/
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     r'''
-            wWWWw
-            (___) wWWWw                vVVVv
-            ~Y~  (___)                (___)
-            \|    ~Y~            |     ~Y~
-        |   \ |/   \| /           |    \ |/
+          wWWWw
+          (___) wWWWw                vVVVv
+           ~Y~  (___)                (___)
+           \|    ~Y~            |     ~Y~
+      |   \ |/   \| /           |    \ |/
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     r'''
@@ -286,7 +290,7 @@ figures = {
                 wWWWw                vVVVv
                 (___)                (___)
             |    ~Y~            |     ~Y~
-        |     |    \| /           |    \ |/
+      |     |    \| /           |    \ |/
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     r'''
@@ -294,7 +298,7 @@ figures = {
                 wWWWw
                 (___)
             |    ~Y~            |
-        |     |    \| /           |      |
+      |     |    \| /           |      |
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     r'''
@@ -302,13 +306,13 @@ figures = {
 
 
             |                   |
-        |     |     |             |      |
+      |     |     |             |      |
     \\|// \\|// \\|/// \\|//  \\|// \\\|///
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^''',
     ],
         'chase': [r'''
 
-    ____□_
+      ____□_
     -/|_||_\`.__---------------------------- __o ----
     ( POLICE _  \ _    ___    ___    ___   _ \<_   __
     =`-(_)--(_)-'                         (_)/(_)
@@ -316,10 +320,10 @@ figures = {
     ''',
     r'''
 
-        ____□_
+           ____□_
     ------/|_||_\`.__----------------------- __o ----
     ___  ( POLICE _  \ ___    ___    ___   _ \<_   __
-        =`-(_)--(_)-'                    (_)/(_)
+         =`-(_)--(_)-'                    (_)/(_)
     -------------------------------------------------
     ''',
     r'''
@@ -327,20 +331,20 @@ figures = {
                 ____□_
     -----------/|_||_\`.__------------------ __o ----
     ___    ___( POLICE _  \   ___    ___   _ \<_   __
-            =`-(_)--(_)-'               (_)/(_)
+              =`-(_)--(_)-'               (_)/(_)
     -------------------------------------------------
     ''',
     r'''
 
-                    ____□_
+                     ____□_
     ----------------/|_||_\`.__------------- __o ----
     ___    ___    _( POLICE _  \_    ___   _ \<_   __
-                =`-(_)--(_)-'          (_)/(_)
+                   =`-(_)--(_)-'          (_)/(_)
     -------------------------------------------------
     ''',
     r'''
 
-                        ____□_
+                          ____□_
     ---------------------/|_||_\`.__-------- __o ----
     ___    ___    ___   ( POLICE _  \___   _ \<_   __
                         =`-(_)--(_)-'     (_)/(_)
@@ -348,25 +352,25 @@ figures = {
     ''',
     r'''
 
-                            ____□_
+                               ____□_
     --------------------------/|_||_\`.__--- __o ----
     ___    ___    ___    ___ ( POLICE _  \ _ \<_   __
-                            =`-(_)--(_)-'(_)/(_)
+                             =`-(_)--(_)-'(_)/(_)
     -------------------------------------------------
     ''',
-    r'''      _________________________
-            ||   ||     ||   ||
-            ||   ||, , ,||   ||
-            ||  (||/|/(\||/  ||
-            ||  ||| _'_`|||  ||
-            ||   || o o ||   ||
-            ||  (||  - `||)  ||
-            ||   ||  =  ||   ||
-            ||   ||\___/||   ||
-            ||___||) , (||___||
-            /||---||-\_/-||---||\
-        / ||--_||_____||_--|| \
-        (_(||)-| S123-45 |-(||)_)
+    r'''_____________________________
+     ||   ||     ||   ||
+     ||   ||, , ,||   ||
+     ||  (||/|/(\||/  ||
+     ||  ||| _'_`|||  ||
+     ||   || o o ||   ||
+     ||  (||  - `||)  ||
+     ||   ||  =  ||   ||
+     ||   ||\___/||   ||
+     ||___||) , (||___||
+    /||---||-\_/-||---||\
+   / ||--_||_____||_--|| \
+  (_(||)-| S123-45 |-(||)_)
     ''']    
     }
     
@@ -382,28 +386,11 @@ lang_dict = {
                     'lang_full': "english",
                     'msg_avail_diff': "Available difficulties:",
                     'difficulties': {
-                        'Words - easy   (handpicked)': (random.choice,[["Quarterback", "Touchdown", "Interception", "Gameday"]],{}),
-                        'Words - easy 2  (handpicked)': (random.choice,[["Quarterback", "Touchdown", "Interception", "Gameday"]],{}),
-                        # '2': {
-                        #     'function': (wonderwords.RandomWord().word, [], {'include_parts_of_speech': ["nouns"]}),
-                        #     'label': "   Words - medium (random nouns)"
-                        # },
-                        # '3': {
-                        #     'function': (wonderwords.RandomWord().word, [], {}),
-                        #     'label': "   Words - hard   (random words)"
-                        # },
-                        # '4': {
-                        #     'function': (wonderwords.RandomSentence().sentence, [], {}),
-                        #     'label': "   Sentence - hard (often gibberish)"
-                        # },
-                        # '5': {
-                        #     'function': (getpass, ["Choose your solution word or sentence:  "], {}),
-                        #     'label': "   Use user input as solution"
-                        # },
-                        # '1984': {
-                        #     'function': (random_from_web, ["https://raw.githubusercontent.com/MHoffmannAC/Data-Science-Primer/main/doublethink"], {}),
-                        #     'label': "Doublethink sentences"
-                        # }
+                        'Team names (Very Easy)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
+                        'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
+                        'Player positions (medium)': ("SELECT name FROM positions;", "name"),
+                        'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
+                        'Player positions (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
                     },
         'msg_inp_diff': "Enter difficulty to start a new game\nor choose different language or illustration\n",
         'msg_avail_lett': "Available letters:",
@@ -434,8 +421,11 @@ lang_dict = {
         'msg_avail_diff': "Verfügbare Schwierigkeitsgrade:",
         'difficulties': {
             '1': {
-                'function': (random.choice, [["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"]],{}),
-                'label': "   Wörter - einfach (handerlesen)"
+                        'Team names (Very Easy)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
+                        'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
+                        'Player positions (medium)': ("SELECT name FROM positions;", "name"),
+                        'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
+                        'Player positions (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
             },
             # '2': {
             #     'function': (random_from_web, ["https://raw.githubusercontent.com/JackShannon/1000-most-common-words/master/1000-most-common-german-words.txt"], {'minlen': 7}),
