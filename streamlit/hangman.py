@@ -48,7 +48,7 @@ def settings_display():
     
     st.write("")
         
-    st.header(lang_dict[st.session_state['language']]['msg_avail_diff'])
+    st.subheader(lang_dict[st.session_state['language']]['msg_avail_diff'])
     difficulties = list(lang_dict[st.session_state["language"]]['difficulties'].keys())
     st.session_state["difficulty"] = st.radio(lang_dict[st.session_state['language']]['msg_avail_diff'],
                                               difficulties,
@@ -57,7 +57,7 @@ def settings_display():
     
     st.write("")
     
-    st.header(lang_dict[st.session_state['language']]['msg_avail_lang'])
+    st.subheader(lang_dict[st.session_state['language']]['msg_avail_lang'])
     languages = [lang_dict[language]['lang_full'] for language in lang_dict.keys()]
     language = st.radio(lang_dict[st.session_state['language']]['msg_avail_lang'],
                                               languages,
@@ -71,7 +71,7 @@ def settings_display():
     
     st.write("")
     
-    st.header(lang_dict[st.session_state['language']]['msg_avail_figs'])
+    st.subheader(lang_dict[st.session_state['language']]['msg_avail_figs'])
     all_figures = list(figures.keys())
     chosen_figure = st.radio(lang_dict[st.session_state['language']]['msg_avail_figs'],
                                           all_figures,
@@ -390,7 +390,7 @@ lang_dict = {
                         'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
                         'Player positions (medium)': ("SELECT name FROM positions;", "name"),
                         'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
-                        'Player positions (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
+                        'Player names (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
                     },
         'msg_inp_diff': "Enter difficulty to start a new game\nor choose different language or illustration\n",
         'msg_avail_lett': "Available letters:",
@@ -420,29 +420,11 @@ lang_dict = {
         'lang_full': "deutsch",
         'msg_avail_diff': "Verfügbare Schwierigkeitsgrade:",
         'difficulties': {
-            '1': {
                         'Team names (Very Easy)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
                         'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
                         'Player positions (medium)': ("SELECT name FROM positions;", "name"),
                         'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
-                        'Player positions (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
-            },
-            # '2': {
-            #     'function': (random_from_web, ["https://raw.githubusercontent.com/JackShannon/1000-most-common-words/master/1000-most-common-german-words.txt"], {'minlen': 7}),
-            #     'label': "   Wörter - mittel  (1000 häufigste Wörter)"
-            # },
-            # '3': {
-            #     'function': (random_from_web, ["https://gist.githubusercontent.com/MarvinJWendt/2f4f4154b8ae218600eb091a5706b5f4/raw/36b70dd6be330aa61cd4d4cdfda6234dcb0b8784/wordlist-german.txt"], {'minlen': 7}),
-            #     'label': "   Wörter - schwer  (Alle möglichen Wörter)"
-            # },
-            # '4': {
-            #     'function': (getpass, ["Wähle Lösungswort oder -Satz:  "], {}),
-            #     'label': "   Lösung aus Benutzereingabe"
-            # },
-            # '1984': {
-            #     'function': (random_from_web, ["https://raw.githubusercontent.com/MHoffmannAC/Data-Science-Primer/main/doppeldenk"], {}),
-            #     'label': "Doppeldenk-Sätze"
-            # }
+                        'Player names (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
         },
         'msg_inp_diff': "Wähle Schwierigkeitsgrad um ein neues Spiel zu beginnen,\noder ändere die Sprache oder Illustration\n",
         'msg_avail_lett': "Mögliche Buchstaben:",
