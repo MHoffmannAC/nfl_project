@@ -1,7 +1,6 @@
 import random
 import streamlit as st
 from pyfiglet import Figlet
-import textwrap
 from sources.sql import create_sql_engine, query_db 
 
 sql_engine = create_sql_engine()

@@ -22,7 +22,7 @@ if not st.session_state["admin_logged_in"]:
                 st.error("Invalid username or password. Please try again.")
 
 else:
-    st.success("You are already logged in as Admin.")
+    st.success("You are logged in as Admin.")
     if st.button("Logout"):
         st.session_state["admin_logged_in"] = False
         st.success("Logged out successfully!")

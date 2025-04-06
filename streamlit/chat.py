@@ -1,11 +1,15 @@
 import streamlit as st
-from streamlit_server_state import server_state, server_state_lock
+from streamlit_server_state import server_state, server_state_lock, no_rerun
 from streamlit_tree_select import tree_select
+from streamlit_autorefresh import st_autorefresh
+
+st_autorefresh(10000)
 
 # Initialize "rooms" in server_state if not already present
 if "rooms" not in server_state:
-    with server_state_lock["rooms"]:
-        server_state["rooms"] = []
+    with no_rerun:
+        with server_state_lock["rooms"]:
+            server_state["rooms"] = []
 
 def extract_all_values(nodes):
     values = []
@@ -123,9 +127,10 @@ checked_nodes = []
 checked_nodes, expanded_nodes = find_checked_and_expanded(nodes, st.session_state["checked_node"])
 for room in rooms:
     room_key = f"room_{room}"
-    if room_key not in server_state:
-        with server_state_lock[room_key]:
-            server_state[room_key] = []
+    with no_rerun:
+        if room_key not in server_state:
+            with server_state_lock[room_key]:
+                server_state[room_key] = []
 
 is_admin_logged_in = st.session_state.get("admin_logged_in", False)
 
@@ -191,8 +196,9 @@ with col2:
     with server_state_lock[room_key]:
         msg_to_delete = None
         
-        cols = st.columns([9,1])
+        
         for msg in server_state[room_key]:
+            cols = st.columns([9,1])
             with cols[0]:
                 st.write(f"**{msg['nickname']}:** {msg['text']}")
             is_admin_logged_in = st.session_state.get("admin_logged_in", False)

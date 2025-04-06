@@ -45,9 +45,6 @@ col1, col2, col3 = st.columns([1,3,1])
 with col1:
     all_seasons = [i['season'] for i in query_db(sql_engine, "SELECT Distinct(season) FROM games ORDER BY season DESC;")]
     season = st.selectbox("Season", options=all_seasons, index=all_seasons.index(current_season))
-    
-    st.write(st.session_state["game_type"])
-
 
 col1, col2, col3 = st.columns([1,3,1])
 with col1:
