@@ -3,6 +3,8 @@ from streamlit_server_state import server_state, server_state_lock, no_rerun
 from streamlit_tree_select import tree_select
 from streamlit_autorefresh import st_autorefresh
 
+from datetime import datetime
+
 st_autorefresh(10000)
 
 # Initialize "rooms" in server_state if not already present
@@ -132,8 +134,6 @@ for room in rooms:
             with server_state_lock[room_key]:
                 server_state[room_key] = []
 
-is_admin_logged_in = st.session_state.get("admin_logged_in", False)
-
 col1, col2 = st.columns([1, 4])
 
 with col1:
@@ -169,7 +169,7 @@ with col2:
         nickname_input = st.text_input("Your nickname", key=nickname_key)
         if nickname_input != "":
             st.session_state["nickname"] = nickname_input
-            if st.session_state["nickname"] == "Admin" and (not is_admin_logged_in):
+            if st.session_state["nickname"] == "Admin" and (not st.session_state.get("admin_logged_in", False)):
                 st.error("Please use a different name!")
                 st.session_state["nickname"] = None
                 st.stop()
@@ -184,12 +184,12 @@ with col2:
         def send_message():
             message_text = st.session_state.get(message_key, "").strip()
             if message_text:
-                new_message = {"nickname": st.session_state["nickname"], "text": message_text}
+                new_message = {"nickname": st.session_state["nickname"], "text": message_text, "time": datetime.now()}
                 with server_state_lock[room_key]:
                     server_state[room_key].append(new_message)
                 st.session_state[message_key] = ""  # Clear input box after sending
 
-        st.text_input("Message", key=message_key, on_change=send_message)
+        st.text_area("Message", key=message_key, placeholder="Type your message or paste an URL to an image", height=100, max_chars=1000, label_visibility="visible", on_change=send_message, help="test")
 
     # Display chat history
     st.subheader("Chat history:")
@@ -197,18 +197,21 @@ with col2:
         msg_to_delete = None
         
         
-        for msg in server_state[room_key]:
-            cols = st.columns([9,1])
+        for msg in server_state[room_key][::-1]:
+            cols = st.columns([2,9,1], gap="medium")
             with cols[0]:
-                st.write(f"**{msg['nickname']}:** {msg['text']}")
-            is_admin_logged_in = st.session_state.get("admin_logged_in", False)
-            if is_admin_logged_in:
-                with cols[1]:
-                    if st.button("❌", key=f"delete_{msg['nickname']}_{msg['text']}"):
+                st.write(f"**{msg['nickname']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
+            with cols[1]:
+                try:
+                    st.image(msg['text'], width=250)
+                except:
+                    st.write(f"{msg['text']}")
+                
+            if st.session_state.get("admin_logged_in", False):
+                with cols[2]:
+                    if st.button("❌", key=f"delete_{msg['nickname']}_{msg['text']}_{msg['time']}"):
                         msg_to_delete = msg
-
-        if msg_to_delete:
-            with server_state_lock[room_key]:
-                server_state[room_key].remove(msg_to_delete)
-            st.success(f"Message '{msg_to_delete}' deleted successfully!")
-            st.rerun()
+                        with server_state_lock[room_key]:
+                            server_state[room_key].remove(msg_to_delete)
+                        st.rerun()
+            st.divider()
