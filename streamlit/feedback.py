@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
-from sources.sql import create_sql_engine, text
+from sources.sql import create_sql_engine, text, query_db
 sql_engine = create_sql_engine()
 
 if not "last_submission" in st.session_state:
@@ -35,3 +35,13 @@ if st.button("Submit"):
             st.session_state["last_submission"] = current_time
         else:
             st.write("Please take your time to formulate a feedback and try submitting again.")
+            
+if st.session_state.get("admin_logged_in", False):
+    st.divider()
+    st.subheader("Admin settings")
+    feedback_limits = query_db(sql_engine, "SELECT MIN(feedback_id) as 'min', MAX(feedback_id) as 'max' FROM feedbacks")
+    cols = st.columns([1,1])
+    with cols[0]:
+        selected_range = st.slider("Select Id range", min_value=feedback_limits[0]['min'], max_value=feedback_limits[0]['max'], value=(feedback_limits[0]['min'],feedback_limits[0]['max']))
+    feedbacks = query_db(sql_engine, f"SELECT * FROM feedbacks WHERE feedback_id BETWEEN {selected_range[0]} AND {selected_range[1]}")
+    st.dataframe(feedbacks)
