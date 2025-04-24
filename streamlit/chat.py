@@ -4,6 +4,7 @@ from streamlit_tree_select import tree_select
 from streamlit_autorefresh import st_autorefresh
 
 from datetime import datetime
+from profanity_check import predict
 
 from sources.sql import validate_username 
 
@@ -188,9 +189,12 @@ with col2:
         def send_message():
             message_text = st.session_state.get(message_key, "").strip()
             if message_text:
-                new_message = {"chat_username": st.session_state["chat_username"], "text": message_text, "time": datetime.now()}
-                with server_state_lock[room_key]:
-                    server_state[room_key].append(new_message)
+                if predict([message_text]) == 0:
+                    new_message = {"chat_username": st.session_state["chat_username"], "text": message_text, "time": datetime.now()}
+                    with server_state_lock[room_key]:
+                        server_state[room_key].append(new_message)
+                else:
+                    st.warning("Your text seems inappropriate!")
                 st.session_state[message_key] = ""  # Clear input box after sending
 
         st.text_area("Message", key=message_key, placeholder="Type your message or paste an URL to an image", height=100, max_chars=1000, label_visibility="visible", on_change=send_message, help="test")
