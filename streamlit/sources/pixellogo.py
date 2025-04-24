@@ -10,7 +10,7 @@ import datetime as dt
 import pandas as pd
 from time import sleep
 
-from sources.sql import create_sql_engine, query_db 
+from sources.sql import create_sql_engine, query_db, validate_username
 sql_engine = create_sql_engine()
 
 def get_random_logo():
@@ -34,8 +34,12 @@ def select_name():
     else:
         player_name = st.text_input("Enter your name:")
         if st.button("Select name"):
-            st.session_state["pl_player_name"] = player_name
-            add_to_leaderboard(st.session_state["pl_player_name"])
+            if validate_username(player_name):
+                st.session_state["pl_player_name"] = player_name
+                add_to_leaderboard(st.session_state["pl_player_name"])
+            else:
+                st.error("Please use a different name!")
+                st.stop()
         else:
             st.stop()
 

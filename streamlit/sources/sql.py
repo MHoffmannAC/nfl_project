@@ -541,3 +541,7 @@ def get_news(sql_engine):
         print(f"Added {len(news)} news")
     else:
         print("No new news yet.")
+
+def validate_username(username):
+    sql_engine = create_sql_engine()
+    return not username.lower() in [i["user_name"].lower() for i in query_db(sql_engine, "SELECT user_name FROM users")]

@@ -5,6 +5,8 @@ from streamlit_autorefresh import st_autorefresh
 
 from datetime import datetime
 
+from sources.sql import validate_username 
+
 st_autorefresh(10000)
 
 # Initialize "rooms" in server_state if not already present
@@ -171,17 +173,15 @@ with col2:
         else:
             chat_username_key = f"chat_username_{selected_room_value}"
             chat_username_input = st.text_input("Select your nickname", key=chat_username_key)
-            if chat_username_input != "":
-                st.session_state["chat_username"] = chat_username_input
-                if st.session_state["chat_username"] == "Admin" and not (st.session_state.get("roles", False) == "admin"):
-                    st.error("Please use a different name!")
-                    st.session_state["chat_username"] = None
-                    st.stop()
-                elif not st.session_state["chat_username"]:
-                    st.warning("Please enter a nickname to join the room.")
-                    st.stop()
-                else:
+            if chat_username_input:
+                if validate_username(chat_username_input):
+                    st.session_state["chat_username"] = chat_username_input
                     st.rerun()
+                else:
+                    st.warning("Please use a different name!")
+
+            else:
+                st.success("Please enter a nickname to join the room.")
 
     else:
         message_key = f"message_input_{selected_room_value}"

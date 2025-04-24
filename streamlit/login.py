@@ -48,7 +48,7 @@ def login_page():
             st.warning('Username/password is incorrect')
             st.session_state["authentication_status"] = None
         elif st.session_state.get('authentication_status') is None:
-            st.error('Please enter your username and password')
+            st.success('Please enter your username and password')
         if st.session_state.get('authentication_status'):
             st.rerun()
 
