@@ -36,7 +36,7 @@ if st.button("Submit"):
         else:
             st.write("Please take your time to formulate a feedback and try submitting again.")
             
-if st.session_state.get("admin_logged_in", False):
+if st.session_state.get("roles", False) == "admin":
     st.divider()
     st.subheader("Admin settings")
     feedback_limits = query_db(sql_engine, "SELECT MIN(feedback_id) as 'min', MAX(feedback_id) as 'max' FROM feedbacks")

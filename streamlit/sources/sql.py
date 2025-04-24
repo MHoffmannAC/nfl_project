@@ -16,6 +16,17 @@ def create_sql_engine(noDB=False):
 def initialize_database(sql_engine):
     metadata = MetaData()
 
+    users_table = Table(
+        'users', metadata,
+        Column('user_id', Integer, primary_key=True, autoincrement=True),
+        Column('user_name', String(100), nullable=False),
+        Column('first_name', String(100), nullable=True),
+        Column('last_name', String(100), nullable=True),
+        Column('email', String(255), nullable=False),
+        Column('password', String(255), nullable=False),
+        Column('roles', String(255), nullable=True)
+    )
+
     # Table for the player data (index: player_id -> primary key)
     players_table = Table(
         'players', metadata,

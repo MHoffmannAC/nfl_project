@@ -164,27 +164,31 @@ with col2:
 
     room_key = f"room_{selected_room_value}"
 
-    if not "nickname" in st.session_state:
-        nickname_key = f"nickname_{selected_room_value}"
-        nickname_input = st.text_input("Your nickname", key=nickname_key)
-        if nickname_input != "":
-            st.session_state["nickname"] = nickname_input
-            if st.session_state["nickname"] == "Admin" and (not st.session_state.get("admin_logged_in", False)):
-                st.error("Please use a different name!")
-                st.session_state["nickname"] = None
-                st.stop()
-            elif not st.session_state["nickname"]:
-                st.warning("Please enter a nickname to join the room.")
-                st.stop()
-            else:
-                st.rerun()
+    if not "chat_username" in st.session_state:
+        if st.session_state.get("username", None):
+            st.session_state["chat_username"] = st.session_state["username"]
+            st.rerun()
+        else:
+            chat_username_key = f"chat_username_{selected_room_value}"
+            chat_username_input = st.text_input("Select your nickname", key=chat_username_key)
+            if chat_username_input != "":
+                st.session_state["chat_username"] = chat_username_input
+                if st.session_state["chat_username"] == "Admin" and not (st.session_state.get("roles", False) == "admin"):
+                    st.error("Please use a different name!")
+                    st.session_state["chat_username"] = None
+                    st.stop()
+                elif not st.session_state["chat_username"]:
+                    st.warning("Please enter a nickname to join the room.")
+                    st.stop()
+                else:
+                    st.rerun()
 
     else:
         message_key = f"message_input_{selected_room_value}"
         def send_message():
             message_text = st.session_state.get(message_key, "").strip()
             if message_text:
-                new_message = {"nickname": st.session_state["nickname"], "text": message_text, "time": datetime.now()}
+                new_message = {"chat_username": st.session_state["chat_username"], "text": message_text, "time": datetime.now()}
                 with server_state_lock[room_key]:
                     server_state[room_key].append(new_message)
                 st.session_state[message_key] = ""  # Clear input box after sending
@@ -200,16 +204,16 @@ with col2:
         for msg in server_state[room_key][::-1]:
             cols = st.columns([2,9,1], gap="medium")
             with cols[0]:
-                st.write(f"**{msg['nickname']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
+                st.write(f"**{msg['chat_username']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
             with cols[1]:
                 try:
                     st.image(msg['text'], width=250)
                 except:
                     st.write(f"{msg['text']}")
                 
-            if st.session_state.get("admin_logged_in", False):
+            if st.session_state.get("roles", False) == "admin":
                 with cols[2]:
-                    if st.button("❌", key=f"delete_{msg['nickname']}_{msg['text']}_{msg['time']}"):
+                    if st.button("❌", key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}"):
                         msg_to_delete = msg
                         with server_state_lock[room_key]:
                             server_state[room_key].remove(msg_to_delete)

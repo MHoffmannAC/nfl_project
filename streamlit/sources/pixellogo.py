@@ -22,15 +22,22 @@ def get_random_logo():
     return team_name, team_img
 
 def select_name():
-    player_name = st.text_input("Enter your name:")
-    if st.button("Select name"):
-        st.session_state["pl_player_name"] = player_name
+    def add_to_leaderboard(player_name):
         if not player_name in server_state["pl_leaderboard"]["Player Name"].values:
             with no_rerun:
                 with server_state_lock["pl_leaderboard"]:
                     server_state["pl_leaderboard"] = pd.concat([server_state["pl_leaderboard"], pd.DataFrame([[player_name, 0, 0, 0]], columns=server_state["pl_leaderboard"].columns)], ignore_index=True)
+    if st.session_state.get("username", None):
+        st.session_state["pl_player_name"] = st.session_state["username"]
+        add_to_leaderboard(st.session_state["pl_player_name"])
+        st.rerun()
     else:
-        st.stop()
+        player_name = st.text_input("Enter your name:")
+        if st.button("Select name"):
+            st.session_state["pl_player_name"] = player_name
+            add_to_leaderboard(st.session_state["pl_player_name"])
+        else:
+            st.stop()
 
 def initialize_game():
     with no_rerun:
@@ -80,8 +87,6 @@ def update_server():
         if server_state["pl_current_stage"] == 0:
             st.session_state["pl_feedback"] = ""
             st.session_state["pl_allowed_to_guess"] = True
-        #if st.session_state["pl_player_name"] not in server_state["pl_leaderboard"]["Player Name"].values:
-        #    select_name()
 
 def evaluate_guess(guess, target):
     if guess == target:
@@ -106,6 +111,8 @@ def evaluate_guess(guess, target):
     st.rerun()
 
 def display_admin_panel():
+    st.divider()
+    st.subheader("Admin settings")
     if st.button("Reset leaderboard"):
         with no_rerun:
             server_state["pl_leaderboard"] = pd.DataFrame(columns=["Player Name", "Total score", "Total games", "Points per game"])
@@ -117,7 +124,7 @@ def display_leaderboard():
     st.title("Leaderboard")
     st.dataframe(server_state["pl_leaderboard"].sort_values(by=["Total score", "Total games"], ascending=[False, True]),
                      hide_index = True)
-    if st.session_state.get("admin_logged_in", False):
+    if st.session_state.get("roles", False) == "admin":
         display_admin_panel()
 
 def display_game():
