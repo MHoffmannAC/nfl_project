@@ -31,11 +31,17 @@ def load_model():
         with open('streamlit/sources/logo_model.pkl', 'rb') as f:
             logo_model = dill.load(f)
     return logo_model
-
 logo_model = load_model()
 
-st.write("Draw a logo of an NFL team and let the AI determine the team.")
+def get_team_prediction(image_for_prediction):
+    probability = logo_model.predict(image_for_prediction)[0][logo_model.predict(image_for_prediction).argmax()]
+    if probability > 0.3:
+        st.success(f"AI prediction: I think you are drawing the {teams_dict[logo_model.predict(image_for_prediction).argmax()]}. I am {round(probability*100)}% certain.")
+    else:
+        st.error("AI prediction: I am not sure yet, please continue drawing")
 
+
+st.write("Draw a logo of an NFL team and let the AI determine the team.")
 
 col1, col2, col3 = st.columns([1,3,2])
 
@@ -99,28 +105,16 @@ with col2:
         teams_dict = {i[0]-1: i[1] for i in teams}
         image_for_prediction = np.expand_dims(preprocess_images([image])[0], axis=0)
         
-        probability = logo_model.predict(image_for_prediction)[0][logo_model.predict(image_for_prediction).argmax()]
-        if probability > 0.3:
-            st.success(f"AI prediction: I think you are drawing the {teams_dict[logo_model.predict(image_for_prediction).argmax()]}. I am {round(probability*100)}% certain.")
-            #team_decoder = {0: 0, 1: 2, 2: 5, 3: 6, 4: 8, 5: 15, 6: 16, 7: 18, 8: 20, 9: 22, 10: 24, 11: 25}
-            #st.success(f"The AI predicts: I think you are drawing the {teams_dict[team_decoder[logo_model.predict(image_for_prediction).argmax()]]}. I am {round(probability*100)}% certain.")
-        else:
-            st.error("AI prediction: I am not sure yet, please continue drawing")
-
-    # url = "https://nfllogos-htglyicwaualwzhbrs2les.streamlit.app/"
+        get_team_prediction(image_for_prediction)
         
-    # st.markdown("The model is still in training, feel free to add your own drawings to the database [here](%s)" % url)
-
 with col3:
     st.write("Upload a (drawn) logo of an NFL team and let the AI determine the team.")
     logo_upload = st.file_uploader("File uploader:", type=["png", "jpg"])
     if logo_upload is not None:
         image = Image.open(logo_upload)
-        houstan = np.expand_dims(preprocess_images([image])[0], axis=0)
-        st.image(houstan, caption="Uploaded Image in RGB", use_container_width=True)
-        st.write(houstan.shape)
-        st.write(logo_model.predict(houstan))
-        st.write(teams_dict[logo_model.predict(houstan).argmax()])
+        uploaded_image = np.expand_dims(preprocess_images([image])[0], axis=0)
+        st.image(uploaded_image, use_container_width=True)
+        get_team_prediction(uploaded_image)
 
 st.divider()
 
