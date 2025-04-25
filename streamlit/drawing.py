@@ -5,19 +5,10 @@ import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from streamlit_image_comparison import image_comparison
 
-from io import StringIO
 import dill 
 from datetime import datetime, timedelta
 
-import tensorflow as tf
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from scikeras.wrappers import KerasClassifier
+from tensorflow.keras.models import load_model
 
 from sqlalchemy import text
 from sources.sql import create_sql_engine, query_db

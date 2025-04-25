@@ -1,14 +1,20 @@
 import streamlit as st
 from streamlit_server_state import server_state, server_state_lock, no_rerun
-from streamlit_tree_select import tree_select
+import streamlit_antd_components as sac
 from streamlit_autorefresh import st_autorefresh
 
 from datetime import datetime
 from profanity_check import predict
 
-from sources.sql import validate_username 
+from sources.sql import create_sql_engine, query_db
+sql_engine = create_sql_engine()
 
-st_autorefresh(10000)
+def validate_username(username, sql_engine):
+    return ( 
+                (not username.lower() in [i["user_name"].lower() for i in query_db(sql_engine, "SELECT user_name FROM users")]) 
+            and 
+                (predict([username]) == 0) 
+            )
 
 # Initialize "rooms" in server_state if not already present
 if "rooms" not in server_state:
@@ -27,48 +33,17 @@ def extract_all_values(nodes):
         traverse(node)
     return values
 
-def find_label_for_value(tree, value):
+def find_value_for_label(tree, label):
     for node in tree:
-        if node["value"] == value:
-            return node["label"]
+        if node["label"] == label:
+            return node["value"]
         if "children" in node:
-            label = find_label_for_value(node["children"], value)
-            if label:
-                return label
+            value = find_value_for_label(node["children"], label)
+            if value:
+                return value
     return None
 
-def find_checked_and_expanded(tree, checked_value):
-    checked_nodes = []
-    expanded_nodes = []
-
-    def traverse(node, parent_expanded=False):
-        node_value = node["value"]
-        is_checked = node_value == checked_value
-        has_checked_child = False
-
-        # Traverse the children if they exist
-        if "children" in node:
-            for child in node["children"]:
-                # Recursively traverse the child node and check if it is checked
-                child_has_checked = traverse(child, parent_expanded=is_checked)
-                has_checked_child = has_checked_child or child_has_checked
-
-        # If this node is checked, add it to the checked_nodes list
-        if is_checked:
-            checked_nodes.append(node_value)
-
-        # If the node has checked children, it should be expanded
-        if has_checked_child:
-            expanded_nodes.append(node_value)
-
-        return has_checked_child or is_checked
-
-    # Start traversal from each node in the tree
-    for node in tree:
-        traverse(node)
-
-    return checked_nodes, expanded_nodes
-
+#format for streamlit_tree_select
 nodes = [
     {"label": "General", "value": "general"},
     {"label": "AFC", "value": "afc", "children": [
@@ -124,12 +99,19 @@ nodes = [
         ]}
     ]}
 ]
+
+def convert_nodes_to_sac_tree_items(nodes):
+    def convert_node(node):
+        children = [convert_node(child) for child in node.get("children", [])]
+        return sac.TreeItem(
+            label=node["label"],
+            tooltip=node["value"],  # store original "value" for reference
+            children=children if children else None
+        )
+    return [convert_node(node) for node in nodes]
+
 rooms = extract_all_values(nodes)
 
-if "checked_node" not in st.session_state:
-    st.session_state["checked_node"] = None
-checked_nodes = []
-checked_nodes, expanded_nodes = find_checked_and_expanded(nodes, st.session_state["checked_node"])
 for room in rooms:
     room_key = f"room_{room}"
     with no_rerun:
@@ -137,89 +119,95 @@ for room in rooms:
             with server_state_lock[room_key]:
                 server_state[room_key] = []
 
-col1, col2 = st.columns([1, 4])
+col1, col2 = st.columns([2, 4], gap="large")
 
-with col1:
-    st.subheader("Rooms")
-    
-    selected_nodes = tree_select(nodes, check_model="leaf", no_cascade=True, show_expand_all=True, expand_on_click=False, checked=[node for node in checked_nodes], expanded=expanded_nodes)
-
-    current_checked = selected_nodes.get("checked", [])
-    if current_checked:
-        if len(current_checked) > 1:
-            previous_checked_node = st.session_state["checked_node"]
-            current_checked = [node for node in current_checked if node != previous_checked_node]
-            st.session_state["checked_node"] = current_checked[0] if current_checked else None
-            st.rerun()
-        else:
-            st.session_state["checked_node"] = current_checked[0]
-
-    selected_room_value = st.session_state["checked_node"]
-    selected_room_label = find_label_for_value(nodes, selected_room_value)
-
-    if not selected_room_value:
+with col1:    
+    if st.session_state.get("selected_chat_room", "no_room") == "no_room":
         st.info("Please select a room.")
-        st.stop()
+        st.session_state["selected_chat_room"] = "no_room"
+    selected_nodes = sac.tree(
+                            items=convert_nodes_to_sac_tree_items(nodes),
+                            label='## Chat rooms',
+                            icon='',
+                            checkbox=False,
+                            open_all=False,
+                            on_change=st.rerun,
+                            key="antd_tree",
+                            )
+    if selected_nodes:
+        if len(selected_nodes) == 1:
+            selected_nodes = selected_nodes[0]
 
-
-with col2:
-    st.header(f"Room: {selected_room_label}")
-
-    room_key = f"room_{selected_room_value}"
-
-    if not "chat_username" in st.session_state:
-        if st.session_state.get("username", None):
-            st.session_state["chat_username"] = st.session_state["username"]
+    selected_room_label = selected_nodes
+    selected_room_value = find_value_for_label(nodes, selected_room_label)
+    if selected_room_value:
+        if not selected_room_value == st.session_state["selected_chat_room"]:
+            st.session_state["selected_chat_room"] = selected_room_value
             st.rerun()
-        else:
-            chat_username_key = f"chat_username_{selected_room_value}"
-            chat_username_input = st.text_input("Select your nickname", key=chat_username_key)
-            if chat_username_input:
-                if validate_username(chat_username_input):
-                    st.session_state["chat_username"] = chat_username_input
-                    st.rerun()
-                else:
-                    st.warning("Please use a different name!")
-
-            else:
-                st.success("Please enter a nickname to join the room.")
-
+        st_autorefresh(10000)
     else:
-        message_key = f"message_input_{selected_room_value}"
-        def send_message():
-            message_text = st.session_state.get(message_key, "").strip()
-            if message_text:
-                if predict([message_text]) == 0:
-                    new_message = {"chat_username": st.session_state["chat_username"], "text": message_text, "time": datetime.now()}
-                    with server_state_lock[room_key]:
-                        server_state[room_key].append(new_message)
-                else:
-                    st.warning("Your text seems inappropriate!")
-                st.session_state[message_key] = ""  # Clear input box after sending
+        st_autorefresh(1000)
 
-        st.text_area("Message", key=message_key, placeholder="Type your message or paste an URL to an image", height=100, max_chars=1000, label_visibility="visible", on_change=send_message, help="test")
 
-    # Display chat history
-    st.subheader("Chat history:")
-    with server_state_lock[room_key]:
-        msg_to_delete = None
-        
-        
-        for msg in server_state[room_key][::-1]:
-            cols = st.columns([2,9,1], gap="medium")
-            with cols[0]:
-                st.write(f"**{msg['chat_username']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
-            with cols[1]:
-                try:
-                    st.image(msg['text'], width=250)
-                except:
-                    st.write(f"{msg['text']}")
-                
-            if st.session_state.get("roles", False) == "admin":
-                with cols[2]:
-                    if st.button("❌", key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}"):
-                        msg_to_delete = msg
-                        with server_state_lock[room_key]:
-                            server_state[room_key].remove(msg_to_delete)
+
+if selected_room_value:
+    with col2:
+        st.header(f"Selected room: {selected_room_label}")
+
+        room_key = f"room_{selected_room_value}"
+
+        if not "chat_username" in st.session_state:
+            if st.session_state.get("username", None):
+                st.session_state["chat_username"] = st.session_state["username"]
+                st.rerun()
+            else:
+                chat_username_key = f"chat_username_{selected_room_value}"
+                chat_username_input = st.text_input("Select your nickname", key=chat_username_key)
+                if chat_username_input:
+                    if validate_username(chat_username_input, sql_engine):
+                        st.session_state["chat_username"] = chat_username_input
                         st.rerun()
-            st.divider()
+                    else:
+                        st.warning("Please use a different name!")
+
+                else:
+                    st.success("Please enter a nickname to join the room.")
+
+        else:
+            message_key = f"message_input_{selected_room_value}"
+            def send_message():
+                message_text = st.session_state.get(message_key, "").strip()
+                if message_text:
+                    if predict([message_text]) == 0:
+                        new_message = {"chat_username": st.session_state["chat_username"], "text": message_text, "time": datetime.now()}
+                        with server_state_lock[room_key]:
+                            server_state[room_key].append(new_message)
+                    else:
+                        st.warning("Your text seems inappropriate!")
+                    st.session_state[message_key] = ""  # Clear input box after sending
+
+            st.text_area("Message", key=message_key, placeholder="Type your message or paste an URL to an image", height=100, max_chars=1000, label_visibility="visible", on_change=send_message, help="test")
+
+        # Display chat history
+        st.subheader("Chat history:")
+        with server_state_lock[room_key]:
+            msg_to_delete = None
+            
+            for msg in server_state[room_key][::-1]:
+                cols = st.columns([2,9,1], gap="medium")
+                with cols[0]:
+                    st.write(f"**{msg['chat_username']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
+                with cols[1]:
+                    try:
+                        st.image(msg['text'], width=250)
+                    except:
+                        st.write(f"{msg['text']}")
+                    
+                if st.session_state.get("roles", False) == "admin":
+                    with cols[2]:
+                        if st.button("❌", key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}"):
+                            msg_to_delete = msg
+                            with server_state_lock[room_key]:
+                                server_state[room_key].remove(msg_to_delete)
+                            st.rerun()
+                st.divider()
