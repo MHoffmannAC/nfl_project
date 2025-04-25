@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
+from streamlit_image_comparison import image_comparison
+
 from io import StringIO
 import dill 
 from datetime import datetime, timedelta
@@ -161,3 +163,46 @@ with col1:
                     st.session_state["last_submission"] = current_time
                 else:
                     st.write("Please take your time to draw the image and try submitting again.")
+
+@st.cache_resource(show_spinner=False)
+def download_logos(min_id, max_id):
+    return query_db(sql_engine, f"SELECT logo_id, image, team_id FROM logos WHERE logo_id BETWEEN {min_id} AND {max_id};")
+                    
+if st.session_state.get("roles", False) == "admin":
+    st.divider()
+    st.header("Admin settings")
+    st.subheader("Display Logos from database")
+    logos_limits = query_db(sql_engine, "SELECT MIN(logo_id) as 'min', MAX(logo_id) as 'max' FROM logos")
+    selected_range = st.slider("Select Id range", min_value=logos_limits[0]['min'], max_value=logos_limits[0]['max'], value=(logos_limits[0]['min'],logos_limits[0]['max']))
+    if not "download_logos" in st.session_state:
+        if st.button("Download"):
+            st.session_state["download_logos"] = True
+            st.rerun()
+    else:
+        logos_db = download_logos(selected_range[0], selected_range[1])
+        teams_db = query_db(sql_engine, "SELECT team_id, name, logo FROM teams;")
+        teams_dict = {team["team_id"]: {"name": team["name"], "logo": team["logo"]}
+                          for team in teams_db}
+        for image in logos_db:
+            st.subheader(teams_dict[image["team_id"]]["name"])
+            cols = st.columns([1,1])
+            with cols[0]:
+                array = np.fromstring(image["image"].replace('[', '').replace(']', ''), sep=' ').reshape(400, 400, 3)
+                array = (array * 255).astype(np.uint8)
+                image_comparison(
+                    img1=Image.fromarray(array, "RGB"),
+                    img2=teams_dict[image["team_id"]]["logo"],
+                    width=250,
+                    show_labels=False
+                    )
+            with cols[1]:
+                if st.button("Delete", key=f"delete_button_{image['logo_id']}"):
+                    st.session_state["image_to_delete"] = image['logo_id']
+                    st.text_input("Confirm", placeholder="Type 'delete' to confirm deletion", label_visibility="visible", key="user_confirmation")
+            st.divider()
+
+    if st.session_state.get("user_confirmation", None) == "delete" and st.session_state.get("image_to_delete", False):
+        with sql_engine.connect() as conn:
+            conn.execute(text(f"DELETE FROM logos WHERE logo_id = {st.session_state['image_to_delete']}"))
+            conn.commit()
+        st.write(f'Image {st.session_state.get("image_to_delete", None)} was deleted!')

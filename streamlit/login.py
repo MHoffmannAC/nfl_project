@@ -62,7 +62,9 @@ def login_page():
     st.write("""
             - delete chat messages 
             - delete leaderboard entries or reset leaderboard (PixelLogo)
-            - read user feedback""")
+            - read user feedback
+            - view and compare submitted logo drawings
+            - delete logo drawings from database""")
 
 def update_page():
     
