@@ -64,7 +64,8 @@ def login_page():
             - delete leaderboard entries or reset leaderboard (PixelLogo)
             - read user feedback
             - view and compare submitted logo drawings
-            - delete logo drawings from database""")
+            - delete logo drawings from database
+            - update full season schedule""")
 
 def update_page():
     
@@ -92,6 +93,7 @@ def update_page():
     if st.session_state.get('authentication_status'):
         try:
             if st.session_state["authenticator"].reset_password(st.session_state.get('username')):
+                update_user_in_db()
                 st.success('Password modified successfully')
         except Exception as e:
             st.error(e)

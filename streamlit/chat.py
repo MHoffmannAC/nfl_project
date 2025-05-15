@@ -6,15 +6,8 @@ from streamlit_autorefresh import st_autorefresh
 from datetime import datetime
 from profanity_check import predict
 
-from sources.sql import create_sql_engine, query_db
-sql_engine = create_sql_engine()
+from sources.sql import validate_username
 
-def validate_username(username, sql_engine):
-    return ( 
-                (not username.lower() in [i["user_name"].lower() for i in query_db(sql_engine, "SELECT user_name FROM users")]) 
-            and 
-                (predict([username]) == 0) 
-            )
 
 # Initialize "rooms" in server_state if not already present
 if "rooms" not in server_state:
@@ -164,7 +157,7 @@ if selected_room_value:
                 chat_username_key = f"chat_username_{selected_room_value}"
                 chat_username_input = st.text_input("Select your nickname", key=chat_username_key)
                 if chat_username_input:
-                    if validate_username(chat_username_input, sql_engine):
+                    if validate_username(chat_username_input):
                         st.session_state["chat_username"] = chat_username_input
                         st.rerun()
                     else:

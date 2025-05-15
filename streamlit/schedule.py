@@ -7,7 +7,7 @@ import pytz
 from tzlocal import get_localzone
 
 from sources.plots import plot_win_probabilities
-from sources.sql import create_sql_engine, get_current_week, query_db, update_week
+from sources.sql import create_sql_engine, get_current_week, query_db, update_week, update_full_schedule
 from sources.long_queries import query_plays
 
 sql_engine = create_sql_engine()
@@ -45,6 +45,11 @@ col1, col2, col3 = st.columns([1,3,1])
 with col1:
     all_seasons = [i['season'] for i in query_db(sql_engine, "SELECT Distinct(season) FROM games ORDER BY season DESC;")]
     season = st.selectbox("Season", options=all_seasons, index=all_seasons.index(current_season))
+if st.session_state.get("roles", False) == "admin":
+    with col3:
+        if st.button("Update all season standings"):
+            with st.spinner("Updating full Schedule..."):
+                update_full_schedule(season, sql_engine)
 
 col1, col2, col3 = st.columns([1,3,1])
 with col1:
@@ -70,7 +75,6 @@ with col1:
 with col3:
     if st.button("Update standings"):
         with st.spinner("Updating Schedule..."):
-            print(week, season, game_type)
             update_week(week, season, game_type, sql_engine)
 
 games = query_db(sql_engine, f"SELECT * FROM games WHERE season={season} AND week={week} AND game_type='{game_type}' ORDER BY date;")
@@ -108,7 +112,6 @@ for game in games:
     with col3:
         game_date = pytz.utc.localize(game['date'])
         game_date_local = game_date.astimezone(get_localzone())
-        print(game_date_local.strftime("%Y-%m-%d %H:%M:%S"))
 
         if int(game['game_status'])==1:
             st.subheader(game_date_local)

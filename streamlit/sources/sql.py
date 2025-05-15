@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 
+from profanity_check import predict
+
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Time, BigInteger, Text, text, UniqueConstraint, ForeignKeyConstraint
 from sqlalchemy.types import Integer
 from bs4 import BeautifulSoup
@@ -435,6 +437,33 @@ def update_game(game_id, game_df, sql_engine):
         sql_connection.commit()
 
 def update_week(week, season, game_type, sql_engine):
+    def update_game_in_db(game_id, status, games_df, sql_engine):
+        update_game(game_id, games_df.loc[game_id, :], sql_engine)
+        if(games_df.loc[game_id, 'game_status']>status):
+            plays_df, _ = get_plays([game_id], sql_engine)
+            if(len(plays_df)>0):
+                append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
+            percentages_df = get_probabilities([game_id], sql_engine)
+            if(len(percentages_df)>0):
+                append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
+        elif(games_df.loc[game_id, 'game_status']=='2'):
+            plays_df, _ = get_plays([game_id], sql_engine)
+            if(len(plays_df)>0):
+                append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
+            percentages_df = get_probabilities([game_id], sql_engine)
+            if(len(percentages_df)>0):
+                append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
+                
+    def add_new_games(games_df, sql_engine):
+        if(len(games_df)>0):
+            append_new_rows(games_df, 'games', sql_engine, 'game_id')
+            plays_df, _ = get_plays(list(games_df.index), sql_engine)
+            if(len(plays_df)>0):
+                append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
+            percentages_df = get_probabilities(list(games_df.index), sql_engine)
+            if(len(percentages_df)>0):
+                append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
+    
     games_in_db = [i[0] for i in sql_engine.connect().execute(text(f"SELECT game_id FROM games WHERE week='{week}' AND season='{season}' AND game_type='{game_type}' ORDER BY game_id;")).fetchall()]
     game_statuses_in_db = [i[0] for i in sql_engine.connect().execute(text(f"SELECT game_status FROM games WHERE week='{week}' AND season='{season}' AND game_type='{game_type}' ORDER BY game_id;")).fetchall()]
     if(len(games_in_db)>0):
@@ -443,49 +472,35 @@ def update_week(week, season, game_type, sql_engine):
         data = response.json()
         games_df = load_game_data(data['events'], sql_engine, asDataFrame=True, checkExistence=False)
         if(len(games_df)>0):
+            # loop over already existing games and update
             for game_id, status in zip(games_in_db, game_statuses_in_db):
-                update_game(game_id, games_df.loc[game_id, :], sql_engine)
-                if(games_df.loc[game_id, 'game_status']>status):
-                    print(f"status of game {game_id} changed.")
-                    plays_df, _ = get_plays([game_id], sql_engine)
-                    if(len(plays_df)>0):
-                        append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
-                    percentages_df = get_probabilities([game_id], sql_engine)
-                    if(len(percentages_df)>0):
-                        append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
-                elif(games_df.loc[game_id, 'game_status']=='2'):
-                    plays_df, _ = get_plays([game_id], sql_engine)
-                    if(len(plays_df)>0):
-                        append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
-                    percentages_df = get_probabilities([game_id], sql_engine)
-                    if(len(percentages_df)>0):
-                        append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
+                update_game_in_db(game_id, status, games_df, sql_engine)
+            # add new games
+            new_games_df = games_df[~games_df.index.isin(games_in_db)]
+            if(len(new_games_df)>0):
+                add_new_games(new_games_df,sql_engine)
     else:
         url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={season}&seasontype={2 if game_type == 'regular-season' else 3}&week={week}"
         response = requests.get(url)
         data = response.json()
         games_df = load_game_data(data['events'], sql_engine, asDataFrame=True)
-        if(len(games_df)>0):
-            append_new_rows(games_df, 'games', sql_engine, 'game_id')
-        plays_df, _ = get_plays(list(games_df.index), sql_engine)
-        if(len(plays_df)>0):
-            append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
-        percentages_df = get_probabilities(list(games_df.index), sql_engine)
-        if(len(percentages_df)>0):
-            append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
+        add_new_games(games_df,sql_engine)
+        
+def update_full_schedule(season, sql_engine):
+    for week in range(1,19):
+        update_week(week, season, "regular-season", sql_engine)
+    for week in [1,2,3,5]:
+        update_week(week, season, "post-season", sql_engine)
 
 def update_running_game(game_id, sql_engine):
     plays_df, _ = get_plays([game_id], sql_engine)
-    print(len(plays_df))
     if(len(plays_df)>0):
         append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
         percentages_df = get_probabilities([game_id], sql_engine)
-        print(len(percentages_df))
         if(len(percentages_df)>0):
             append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
 
 def get_news(sql_engine):
-    print("getting news")
     urls = ["https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=150",
             "https://now.core.api.espn.com/v1/sports/news?limit=1000&sport=football",
             "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?team="]  # needs team_id
@@ -538,6 +553,12 @@ def get_news(sql_engine):
         news_df['published'] = pd.to_datetime(news_df['published'])
         news_df = news_df.loc[~news_df.index.duplicated()]
         append_new_rows(news_df, 'news', sql_engine, 'news_id')
-        print(f"Added {len(news)} news")
-    else:
-        print("No new news yet.")
+
+
+def validate_username(username):
+    sql_engine = create_sql_engine()
+    return ( 
+                (not username.lower() in [i["user_name"].lower() for i in query_db(sql_engine, "SELECT user_name FROM users")]) 
+            and 
+                (predict([username]) == 0) 
+            )
