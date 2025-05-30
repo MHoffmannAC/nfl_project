@@ -66,12 +66,13 @@ for post in latest_images:
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-#from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import time
 import requests
-#from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
 from streamlit_server_state import server_state, server_state_lock, no_rerun
 
 options = Options()
@@ -80,9 +81,8 @@ options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--window-size=1920x1080")
 
-#service = Service(ChromeDriverManager().install())
-#driver = webdriver.Chrome(service=service, options=options)
-driver = webdriver.Chrome(options=options)
+service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+driver = webdriver.Chrome(service=service, options=options)
 
 username = "nflmemes_ig" 
 url = f"https://www.instagram.com/{username}/"
