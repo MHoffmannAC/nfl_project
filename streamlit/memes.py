@@ -80,30 +80,35 @@ def get_driver():
     return webdriver.Chrome(
         service=Service(
             ChromeDriverManager(
-                chrome_type=ChromeType.CHROMIUM
+                #chrome_type=ChromeType.CHROMIUM
                 ).install()
         ),
         options=options,
     )
 
-options = Options()
-options.add_argument("--disable-gpu")
-options.add_argument("--headless")
+try:
 
-driver = get_driver()
+    options = Options()
+    options.add_argument("--disable-gpu")
+    options.add_argument("--headless")
 
-username = "nflmemes_ig" 
-url = f"https://www.instagram.com/{username}/"
-driver.get(url)
+    driver = get_driver()
 
-time.sleep(5)
+    username = "nflmemes_ig" 
+    url = f"https://www.instagram.com/{username}/"
 
-for _ in range(3):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(3)
+    driver.get(url)
 
-soup = BeautifulSoup(driver.page_source, "html.parser")
-driver.quit()
+    time.sleep(5)
+
+    for _ in range(3):
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(3)
+
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    driver.quit()
+except:
+    soup = BeautifulSoup("", "html.parser")
 
 if not "memes" in server_state:
     with no_rerun:
