@@ -37,7 +37,8 @@ def main():
             st.Page("streamlit/chatbot.py", title="ChatBot", icon=":material/chat:"),
             st.Page("streamlit/news.py", title="NewsBot", icon=":material/newspaper:"),
             st.Page("streamlit/drawing.py", title="LogoRecognizer", icon=":material/image_search:"),
-            st.Page("streamlit/memes.py", title="Meme explainer", icon=":material/school:")
+            st.Page("streamlit/memes.py", title="MemeExplainer", icon=":material/school:")
+            st.Page("streamlit/memes2.py", title="Meme explainer", icon=":material/school:")
         ],
         "Information": [
             st.Page("streamlit/data.py", title="Data Acquisition", icon=":material/storage:"),
