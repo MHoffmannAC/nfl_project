@@ -5,206 +5,6 @@ from sources.sql import create_sql_engine, query_db
 
 sql_engine = create_sql_engine()
 
-def initial_setup():
-    if "language" not in st.session_state:
-        st.session_state["language"] = "en"
-    if "difficulty" not in st.session_state or st.session_state["difficulty"] not in list(lang_dict[st.session_state["language"]]['difficulties'].keys()):
-        st.session_state["difficulty"] = list(lang_dict[st.session_state["language"]]['difficulties'].keys())[0]
-    if "figure" not in st.session_state:
-        st.session_state["figure"] = "hangman"
-    if "figlet" not in st.session_state:
-        st.session_state["figlet"] = "ansi_regular"
-    if "input_feedback" not in st.session_state:    
-        st.session_state["input_feedback"] = ""
-    if "input_text" not in st.session_state:    
-        st.session_state["input_text"] = ""
-
-def cleaned_solution(solution):
-    return solution.replace('Ö', 'OE').replace('Ü', 'UE').replace('Ä', 'AE').replace(",", "").replace(".", "").replace("!", "").replace("?", "").replace(":", "").replace(";", "").replace("-", "").replace("_", " ").replace("\"", "").replace(")","").replace("(", "").replace("\n", "").strip()
-
-def refresh():
-    del st.session_state["solution"]
-    del st.session_state["remaining_guesses"]
-    del st.session_state["guessed_word_so_far"]
-    del st.session_state["possible_guesses"]
-    del st.session_state["wrong_guesses"]
-    del st.session_state["correct_guesses"]
-    del st.session_state["letters_to_guess"]
-    del st.session_state["input_feedback"]
-    del st.session_state["input_text"]   
-    del st.session_state["reset_flag"]
-
-    #del st.session_state["language"]
-    #del st.session_state["difficulty"]
-    #del st.session_state["figure"]
-    #del st.session_state["figlet"]
-
-def settings_display():
-
-    st.code(Figlet(font=st.session_state['figlet']).renderText("HANGMAN").rstrip())
-    st.write("")
-    st.write("Welcome to a new round of hangman. Please select your game settings. To start a game, press \"Start Game\"")
-    
-    st.write("")
-        
-    st.subheader(lang_dict[st.session_state['language']]['msg_avail_diff'])
-    difficulties = list(lang_dict[st.session_state["language"]]['difficulties'].keys())
-    st.session_state["difficulty"] = st.radio(lang_dict[st.session_state['language']]['msg_avail_diff'],
-                                              difficulties,
-                                              index=difficulties.index(st.session_state["difficulty"]),
-                                              label_visibility="collapsed")
-    
-    st.write("")
-    
-    st.subheader(lang_dict[st.session_state['language']]['msg_avail_lang'])
-    languages = [lang_dict[language]['lang_full'] for language in lang_dict.keys()]
-    language = st.radio(lang_dict[st.session_state['language']]['msg_avail_lang'],
-                                              languages,
-                                              index = languages.index(lang_dict[st.session_state['language']]['lang_full']),
-                                              label_visibility="collapsed")
-    
-    lang_short = next((key for key, value in lang_dict.items() if value.get("lang_full") == language), None)
-    if lang_short != st.session_state["language"]:
-        st.session_state["language"] = lang_short
-        st.rerun()
-    
-    st.write("")
-    
-    st.subheader(lang_dict[st.session_state['language']]['msg_avail_figs'])
-    all_figures = list(figures.keys())
-    chosen_figure = st.radio(lang_dict[st.session_state['language']]['msg_avail_figs'],
-                                          all_figures,
-                                          index = all_figures.index(st.session_state["figure"]),
-                                          label_visibility="collapsed")
-    if chosen_figure != st.session_state["figure"]:
-        st.session_state["figure"] = chosen_figure
-        st.rerun()
-    
-    st.write("")
-
-    if st.button("Start Game"):
-        initialize_game()
-
-def initialize_game():
-    query_string, column_name = lang_dict[st.session_state["language"]]['difficulties'][st.session_state["difficulty"]]
-    dirty_solution = random.choice(query_db(sql_engine, query_string))[column_name]
-    st.session_state["solution"] = cleaned_solution(dirty_solution.upper())
-    st.session_state["remaining_guesses"] = 6
-    st.session_state["guessed_word_so_far"] = "_ " * len(st.session_state["solution"])
-    st.session_state["possible_guesses"] = ["A B C D E F G H I", "J K L M N O P Q R", "S T U V W X Y Z"]
-    st.session_state["wrong_guesses"] = []
-    st.session_state["correct_guesses"] = []
-    st.session_state["letters_to_guess"] = st.session_state["guessed_word_so_far"].count("_")
-    if(" " in st.session_state["solution"]):
-        for i in range(len(st.session_state["solution"])):
-            if(st.session_state["solution"][i] == " "):
-                st.session_state["guessed_word_so_far"]=st.session_state["guessed_word_so_far"][:2*i]+" "+st.session_state["guessed_word_so_far"][2*i+1:]
-    st.rerun()
-
-def game_display():
-    st.title("Hangman")
-    space_needed=max(len(lang_dict[st.session_state['language']]['msg_guesses_left'][1].format(num_guesses=st.session_state["remaining_guesses"]))+10,len(st.session_state["guessed_word_so_far"])+5)
-    st.write("")
-
-    current_figure = figures_lines[st.session_state['figure']][6 - st.session_state["remaining_guesses"]]
-
-    game_display = "\n".join([
-        " " * space_needed + current_figure[0],
-        st.session_state["guessed_word_so_far"].ljust(space_needed) + current_figure[1],
-        " " * space_needed + current_figure[2],
-        lang_dict[st.session_state['language']]['msg_avail_lett'].ljust(space_needed) + current_figure[3],
-        st.session_state["possible_guesses"][0].ljust(space_needed) + current_figure[4],
-        st.session_state["possible_guesses"][1].ljust(space_needed) + current_figure[5],
-        st.session_state["possible_guesses"][2].ljust(space_needed) + current_figure[6],
-        " " * space_needed + current_figure[7],
-        lang_dict[st.session_state['language']]['msg_guesses_left'][1].format(num_guesses=st.session_state["remaining_guesses"]) if st.session_state["remaining_guesses"] > 1 
-        else lang_dict[st.session_state['language']]['msg_guesses_left'][0],
-        ""
-    ])
-    
-    st.code(game_display, language=None)
-
-    # workaround to empty input field after guess
-    if "input_text" not in st.session_state:
-        st.session_state["input_text"] = ""
-    if "reset_flag" not in st.session_state:
-        st.session_state["reset_flag"] = False  
-    if st.session_state["reset_flag"]:
-        st.session_state["input_text"] = ""  
-        st.session_state["reset_flag"] = False  
-
-    st.text_input(lang_dict[st.session_state['language']]['msg_choose_lett'], key="input_text")
-    if st.button("Guess"):
-        evaluate_guess()
-        st.rerun()
-    st.write(st.session_state["input_feedback"])
-
-    
-
-def evaluate_guess():
-    st.session_state["reset_flag"] = True
-    user_guess = st.session_state["input_text"].upper()
-    if(not (  (len(user_guess)==1 and user_guess.isalpha())
-                or
-                (len(user_guess)==len(st.session_state["solution"]))
-                )):
-        st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_allowed_input'])
-    elif(user_guess in st.session_state["wrong_guesses"] or user_guess in st.session_state["correct_guesses"]):
-        st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_repeat'])
-    elif(len(user_guess)==len(st.session_state["solution"])):
-        if(user_guess==st.session_state["solution"]):
-            st.session_state["guessed_word_so_far"]=st.session_state["solution"]
-        else:
-            st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_not_solution'].format(user_guess=user_guess))
-            st.session_state["remaining_guesses"]-=1
-    else:
-        if(user_guess in st.session_state["solution"]):
-            for i in range(len(st.session_state["solution"])):
-                if(st.session_state["solution"][i] == user_guess):
-                    st.session_state["guessed_word_so_far"]=st.session_state["guessed_word_so_far"][:2*i]+user_guess+st.session_state["guessed_word_so_far"][2*i+1:]
-            st.session_state["correct_guesses"].append(user_guess)
-            st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_correct_lett'].format(user_guess=user_guess))
-        else:
-            st.session_state["wrong_guesses"].append(user_guess)
-            st.session_state["remaining_guesses"]-=1
-            st.session_state["input_feedback"] = (lang_dict[st.session_state['language']]['msg_wrong_lett'].format(user_guess=user_guess))
-        for i in range(len(st.session_state["possible_guesses"])):
-            st.session_state["possible_guesses"][i] = st.session_state["possible_guesses"][i].replace(user_guess," ")
-    st.session_state["letters_to_guess"] = st.session_state["guessed_word_so_far"].count("_")
-    
-def final_display():
-    st.title("Game Results")
-    if(st.session_state["remaining_guesses"]>0):
-      st.write("")
-      st.code(
-            Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_win']).rstrip()
-            + "\n\n" 
-            + lang_dict[st.session_state['language']]['msg_success'].format(solution=st.session_state["solution"]),
-            language=None
-              )
-    else:
-      st.code(
-          Figlet(font=st.session_state['figlet']).renderText(lang_dict[st.session_state['language']]['header_lost']).rstrip()
-          + "\n\n"
-          + figures[st.session_state['figure']][6]
-          + "\n\n"
-          + lang_dict[st.session_state['language']]['msg_reveal'].format(solution=st.session_state["solution"]),
-          language=None
-             )
-
-    st.write("")
-    
-    refresh()
-    if st.button("Restart"):
-        initial_setup()
-        st.rerun()
-    #user_input = input(lang_dict[st.session_state['language']]['msg_restart_quit'])
-    #if(user_input == "r"):
-    #  return True
-    #elif(user_input == "q"):
-    #  return False
-
-    
 figures = {
 
         'hangman': ['''
@@ -389,15 +189,22 @@ for figure in figures:
 lang_dict = {
 
     'en': {
-                    'lang_full': "english",
-                    'msg_avail_diff': "Available difficulties:",
-                    'difficulties': {
-                        'Team names (Very Easy)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
-                        'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
-                        'Player positions (medium)': ("SELECT name FROM positions;", "name"),
-                        'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
-                        'Player names (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
-                    },
+        'msg_welcome': "Welcome to a new round of hangman. Please select your game settings. To start a game, press \"Start Game\"",
+        'lang_full': "english",
+        'button_start': "Start Game",
+        'button_guess': "Submit Guess",
+        'button_hint1': "Use first hint (-1 life)",
+        'button_hint2': "Use second hint (-1 life)",
+        'msg_avail_diff': "Available difficulties:",
+        'msg_set_hints': "Hint settings:",
+        'msg_toggle_hints': "Allow hints",
+        'difficulties': {
+            'Team names (Very Easy)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
+            'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
+            'Player positions (medium)': ("SELECT name FROM positions;", "name"),
+            'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
+            'Player names (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
+        },
         'msg_inp_diff': "Enter difficulty to start a new game\nor choose different language or illustration\n",
         'msg_avail_lett': "Available letters:",
         'msg_avail_lang': "Available languages:",
@@ -413,6 +220,9 @@ lang_dict = {
         'msg_success': "You successfully guessed the solution {solution}",
         'msg_reveal': "The correct solution was {solution}",
         'msg_restart_quit': "Choose 'r' to restart the game or 'q' to quit the game    ",
+        'msg_hints_letters_left': "You almost got the solution already. You will be able to guess it without a hint!",
+        'msg_hints_lives_left': "Revealing a hint costs one life. Unfortunately, you have only one left. Use it to guess a letter or the solution instead. No hint revealed.",
+        'msg_hint_revealed': "You used a hint. Revealed letter:",
         'header_win': "YOU WIN",
         'header_lost': "GAME OVER",
         'fig_texts': {
@@ -423,14 +233,21 @@ lang_dict = {
     },
 
     'de': {
+        'msg_welcome': "Willkommen zu einer neuen Runde Hangman. Bitte wähle deine Einstellungen. Presse \"Starte Spiel\", um das Spiel zu beginnen.",
         'lang_full': "deutsch",
+        'button_start': "Starte Spiel",
+        'button_guess': "Schicke Vermutung ab",
+        'button_hint1': "Nutze ersten Hinweis (-1 Leben)",
+        'button_hint2': "Nutze zweiten Hinweis (-1 Leben)",
         'msg_avail_diff': "Verfügbare Schwierigkeitsgrade:",
+        'msg_set_hints': "Hinweis-Einstellungen:",
+        'msg_toggle_hints': "Hinweise zulassen",
         'difficulties': {
-                        'Team names (Very Easy)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
-                        'Team locations (Easy)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
-                        'Player positions (medium)': ("SELECT name FROM positions;", "name"),
-                        'College mascots (hard)': ("SELECT mascot FROM colleges;", "mascot"),
-                        'Player names (very hard)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
+                        'Teamnamen (Sehr einfach)': ("SELECT name FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "name"),
+                        'Teamorte (einfach)': ("SELECT location FROM teams WHERE `name` NOT IN ('Afc', 'Nfc', 'TBD');", "location"),
+                        'Spielpositionen (mittel)': ("SELECT name FROM positions;", "name"),
+                        'Collegemaskotchen (schwer)': ("SELECT mascot FROM colleges;", "mascot"),
+                        'Spielernamen (sehr schwer)': ("SELECT CONCAT(firstName, ' ', lastName) AS player_name FROM players;", "player_name"),
         },
         'msg_inp_diff': "Wähle Schwierigkeitsgrad um ein neues Spiel zu beginnen,\noder ändere die Sprache oder Illustration\n",
         'msg_avail_lett': "Mögliche Buchstaben:",
@@ -447,6 +264,9 @@ lang_dict = {
         'msg_success': "Du hast erfolgreich die Lösung {solution} erraten",
         'msg_reveal': "Die korrekte Lösung wäre {solution} gewesen",
         'msg_restart_quit': "Wähle 'r' zum Neustarten oder 'q' zum Beenden des Spiels    ",
+        'msg_hints_letters_left': "Du hast schon fast die Lösung gefunden. Du schaffst es ohne einen Hinweis!",
+        'msg_hints_lives_left': "Ein Hinweis kostet dich ein Leben. Leider hast du nur noch ein Leben übrig. Nutze dieses lieber, um einen Buchstaben oder die Lösung zu raten. Es wurde kein Hinweis zugelassen.",
+        'msg_hint_revealed': "Du hast einen Hinweis verwendet. Folgender Buchstabe wurde aufgedeckt:",
         'header_win': "GEWONNEN",
         'header_lost': "VERLOREN",
         'fig_texts': {
@@ -459,3 +279,255 @@ lang_dict = {
 # here, new languages can be added. make sure to define ALL dict entries (i.e., copy from an existing one and replace accordingly)
 
 }
+
+def initial_setup():
+    if "hangman" not in st.session_state:
+        st.session_state["hangman"] = {}
+    if "language" not in st.session_state["hangman"].keys():
+        st.session_state["hangman"]["language"] = "en"
+    if "difficulty" not in st.session_state["hangman"].keys() or st.session_state["hangman"]["difficulty"] not in list(lang_dict[st.session_state["hangman"]["language"]]['difficulties'].keys()):
+        st.session_state["hangman"]["difficulty"] = list(lang_dict[st.session_state["hangman"]["language"]]['difficulties'].keys())[0]
+    if "figure" not in st.session_state["hangman"].keys():
+        st.session_state["hangman"]["figure"] = "hangman"
+    if "figlet" not in st.session_state["hangman"].keys():
+        st.session_state["hangman"]["figlet"] = "ansi_regular"
+    if "input_feedback" not in st.session_state["hangman"].keys():    
+        st.session_state["hangman"]["input_feedback"] = ""
+    if "input_text" not in st.session_state:    
+        st.session_state["input_text"] = ""
+    if "allow_hints" not in st.session_state["hangman"].keys():    
+        st.session_state["hangman"]["allow_hints"] = False
+
+def cleaned_solution(solution):
+    return solution.replace('Ö', 'OE').replace('Ü', 'UE').replace('Ä', 'AE').replace(",", "").replace(".", "").replace("!", "").replace("?", "").replace(":", "").replace(";", "").replace("-", "").replace("_", " ").replace("\"", "").replace(")","").replace("(", "").replace("\n", "").strip()
+
+def refresh():
+    del st.session_state["hangman"]["solution"]
+    del st.session_state["hangman"]["remaining_guesses"]
+    del st.session_state["hangman"]["guessed_word_so_far"]
+    del st.session_state["hangman"]["possible_guesses"]
+    del st.session_state["hangman"]["wrong_guesses"]
+    del st.session_state["hangman"]["correct_guesses"]
+    del st.session_state["hangman"]["letters_to_guess"]
+    del st.session_state["hangman"]["input_feedback"]
+    del st.session_state["input_text"]   
+    del st.session_state["hangman"]["reset_flag"]
+
+    #del st.session_state["hangman"]["language"]
+    #del st.session_state["hangman"]["difficulty"]
+    #del st.session_state["hangman"]["figure"]
+    #del st.session_state["hangman"]["figlet"]
+
+def settings_display():
+    st.code(Figlet(font=st.session_state["hangman"]['figlet']).renderText("HANGMAN").rstrip())
+    st.write("")
+    st.write(lang_dict[st.session_state["hangman"]['language']]['msg_welcome'])
+    
+    st.write("")
+        
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_diff'])
+    difficulties = list(lang_dict[st.session_state["hangman"]["language"]]['difficulties'].keys())
+    st.session_state["hangman"]["difficulty"] = st.radio(lang_dict[st.session_state["hangman"]['language']]['msg_avail_diff'],
+                                              difficulties,
+                                              index=difficulties.index(st.session_state["hangman"]["difficulty"]),
+                                              label_visibility="collapsed")
+    
+    st.write("")
+    
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_lang'])
+    languages = [lang_dict[language]['lang_full'] for language in lang_dict.keys()]
+    language = st.radio(lang_dict[st.session_state["hangman"]['language']]['msg_avail_lang'],
+                                              languages,
+                                              index = languages.index(lang_dict[st.session_state["hangman"]['language']]['lang_full']),
+                                              label_visibility="collapsed")
+    
+    lang_short = next((key for key, value in lang_dict.items() if value.get("lang_full") == language), None)
+    if lang_short != st.session_state["hangman"]["language"]:
+        st.session_state["hangman"]["language"] = lang_short
+        st.rerun()
+    
+    st.write("")
+    
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_figs'])
+    all_figures = list(figures.keys())
+    chosen_figure = st.radio(lang_dict[st.session_state["hangman"]['language']]['msg_avail_figs'],
+                                          all_figures,
+                                          index = all_figures.index(st.session_state["hangman"]["figure"]),
+                                          label_visibility="collapsed")
+    if chosen_figure != st.session_state["hangman"]["figure"]:
+        st.session_state["hangman"]["figure"] = chosen_figure
+        st.rerun()
+    
+    st.write("")
+    
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_set_hints'])
+
+    hint_toggle = st.toggle(lang_dict[st.session_state["hangman"]['language']]['msg_toggle_hints'], value=st.session_state["hangman"]["allow_hints"])
+    if hint_toggle != st.session_state["hangman"].get("allow_hints", None):
+        st.session_state["hangman"]["allow_hints"] = hint_toggle
+        st.rerun()
+        
+    st.write("")
+
+    if st.button(lang_dict[st.session_state["hangman"]['language']]['button_start']):
+        initialize_game()
+
+def initialize_game():
+    query_string, column_name = lang_dict[st.session_state["hangman"]["language"]]['difficulties'][st.session_state["hangman"]["difficulty"]]
+    dirty_solution = random.choice(query_db(sql_engine, query_string))[column_name]
+    st.session_state["hangman"]["solution"] = cleaned_solution(dirty_solution.upper())
+    st.session_state["hangman"]["remaining_guesses"] = 6
+    st.session_state["hangman"]["guessed_word_so_far"] = "_ " * len(st.session_state["hangman"]["solution"])
+    st.session_state["hangman"]["possible_guesses"] = ["A B C D E F G H I", "J K L M N O P Q R", "S T U V W X Y Z"]
+    st.session_state["hangman"]["wrong_guesses"] = []
+    st.session_state["hangman"]["correct_guesses"] = []
+    st.session_state["hangman"]["letters_to_guess"] = st.session_state["hangman"]["guessed_word_so_far"].count("_")
+    if st.session_state["hangman"]["allow_hints"]:
+        st.session_state["hangman"]["remaining_hints"] = 2
+    if(" " in st.session_state["hangman"]["solution"]):
+        for i in range(len(st.session_state["hangman"]["solution"])):
+            if(st.session_state["hangman"]["solution"][i] == " "):
+                st.session_state["hangman"]["guessed_word_so_far"]=st.session_state["hangman"]["guessed_word_so_far"][:2*i]+" "+st.session_state["hangman"]["guessed_word_so_far"][2*i+1:]
+    st.rerun()
+
+def game_display():
+    st.title("Hangman")
+    space_needed=max(len(lang_dict[st.session_state["hangman"]['language']]['msg_guesses_left'][1].format(num_guesses=st.session_state["hangman"]["remaining_guesses"]))+10,len(st.session_state["hangman"]["guessed_word_so_far"])+5)
+    st.write("")
+
+    current_figure = figures_lines[st.session_state["hangman"]['figure']][6 - st.session_state["hangman"]["remaining_guesses"]]
+
+    game_display = "\n".join([
+        " " * space_needed + current_figure[0],
+        st.session_state["hangman"]["guessed_word_so_far"].ljust(space_needed) + current_figure[1],
+        " " * space_needed + current_figure[2],
+        lang_dict[st.session_state["hangman"]['language']]['msg_avail_lett'].ljust(space_needed) + current_figure[3],
+        st.session_state["hangman"]["possible_guesses"][0].ljust(space_needed) + current_figure[4],
+        st.session_state["hangman"]["possible_guesses"][1].ljust(space_needed) + current_figure[5],
+        st.session_state["hangman"]["possible_guesses"][2].ljust(space_needed) + current_figure[6],
+        " " * space_needed + current_figure[7],
+        lang_dict[st.session_state["hangman"]['language']]['msg_guesses_left'][1].format(num_guesses=st.session_state["hangman"]["remaining_guesses"]) if st.session_state["hangman"]["remaining_guesses"] > 1 
+        else lang_dict[st.session_state["hangman"]['language']]['msg_guesses_left'][0],
+        ""
+    ])
+    
+    st.code(game_display, language=None)
+
+    # workaround to empty input field after guess
+    if "input_text" not in st.session_state:
+        st.session_state["input_text"] = ""
+    if "reset_flag" not in st.session_state["hangman"].keys():
+        st.session_state["hangman"]["reset_flag"] = False  
+    if st.session_state["hangman"]["reset_flag"]:
+        st.session_state["input_text"] = ""  
+        st.session_state["hangman"]["reset_flag"] = False  
+
+    st.text_input(lang_dict[st.session_state["hangman"]['language']]['msg_choose_lett'], key="input_text")
+    cols = st.columns([5,1,1])
+    if cols[0].button(lang_dict[st.session_state["hangman"]['language']]['button_guess']):
+        evaluate_guess(st.session_state["input_text"])
+        st.rerun()
+    if st.session_state["hangman"]["allow_hints"] and st.session_state["hangman"]["remaining_hints"] > 0:
+        if st.session_state["hangman"]["remaining_hints"] == 2:
+            button_msg = lang_dict[st.session_state["hangman"]['language']]['button_hint1']
+        else:
+            button_msg = lang_dict[st.session_state["hangman"]['language']]['button_hint2']
+        if cols[1].button(button_msg):
+            get_hint()
+            st.rerun()
+    if cols[2].button("Restart"):
+        refresh()
+        initial_setup()
+        st.rerun()
+    st.write(st.session_state["hangman"]["input_feedback"])
+
+def get_hint():
+    remaining_letters_to_guess = list(set(st.session_state["hangman"]["solution"]).difference(set(st.session_state["hangman"]["guessed_word_so_far"])).difference(set(" ")))
+    if len(remaining_letters_to_guess) < 3:
+        st.session_state["hangman"]["input_feedback"] = lang_dict[st.session_state["hangman"]['language']]['msg_hints_letters_left']
+        st.session_state["hangman"]["remaining_hints"] == 0
+    elif st.session_state["hangman"]["remaining_guesses"] < 2:
+        st.session_state["hangman"]["input_feedback"] = lang_dict[st.session_state["hangman"]['language']]['msg_hints_lives_left']
+        st.session_state["hangman"]["remaining_hints"] == 0
+    else:
+        revealed_letter = random.choice(remaining_letters_to_guess)
+        st.session_state["hangman"]["remaining_hints"] -= 1
+        st.session_state["hangman"]["remaining_guesses"] -= 1
+        evaluate_guess(revealed_letter)
+        st.session_state["hangman"]["input_feedback"] = lang_dict[st.session_state["hangman"]['language']]['msg_hint_revealed'] + " " + revealed_letter
+        st.rerun()
+    
+    
+def evaluate_guess(user_guess):
+    st.session_state["hangman"]["reset_flag"] = True
+    user_guess = user_guess.upper()
+    if user_guess == "RESTART":
+        refresh()
+        initial_setup()
+        st.rerun()
+    elif(not (  (len(user_guess)==1 and user_guess.isalpha())
+                or
+                (len(user_guess)==len(st.session_state["hangman"]["solution"]))
+                )):
+        st.session_state["hangman"]["input_feedback"] = (lang_dict[st.session_state["hangman"]['language']]['msg_allowed_input'])
+    elif(user_guess in st.session_state["hangman"]["wrong_guesses"] or user_guess in st.session_state["hangman"]["correct_guesses"]):
+        st.session_state["hangman"]["input_feedback"] = (lang_dict[st.session_state["hangman"]['language']]['msg_repeat'])
+    elif(len(user_guess)==len(st.session_state["hangman"]["solution"])):
+        if(user_guess==st.session_state["hangman"]["solution"]):
+            st.session_state["hangman"]["guessed_word_so_far"]=st.session_state["hangman"]["solution"]
+        else:
+            st.session_state["hangman"]["input_feedback"] = (lang_dict[st.session_state["hangman"]['language']]['msg_not_solution'].format(user_guess=user_guess))
+            st.session_state["hangman"]["remaining_guesses"]-=1
+    else:
+        if(user_guess in st.session_state["hangman"]["solution"]):
+            for i in range(len(st.session_state["hangman"]["solution"])):
+                if(st.session_state["hangman"]["solution"][i] == user_guess):
+                    st.session_state["hangman"]["guessed_word_so_far"]=st.session_state["hangman"]["guessed_word_so_far"][:2*i]+user_guess+st.session_state["hangman"]["guessed_word_so_far"][2*i+1:]
+            st.session_state["hangman"]["correct_guesses"].append(user_guess)
+            st.session_state["hangman"]["input_feedback"] = (lang_dict[st.session_state["hangman"]['language']]['msg_correct_lett'].format(user_guess=user_guess))
+        else:
+            st.session_state["hangman"]["wrong_guesses"].append(user_guess)
+            st.session_state["hangman"]["remaining_guesses"]-=1
+            st.session_state["hangman"]["input_feedback"] = (lang_dict[st.session_state["hangman"]['language']]['msg_wrong_lett'].format(user_guess=user_guess))
+        for i in range(len(st.session_state["hangman"]["possible_guesses"])):
+            st.session_state["hangman"]["possible_guesses"][i] = st.session_state["hangman"]["possible_guesses"][i].replace(user_guess," ")
+    st.session_state["hangman"]["letters_to_guess"] = st.session_state["hangman"]["guessed_word_so_far"].count("_")
+    
+def final_display():
+    st.title("Game Results")
+    if(st.session_state["hangman"]["remaining_guesses"]>0):
+      st.write("")
+      st.code(
+            Figlet(font=st.session_state["hangman"]['figlet']).renderText(lang_dict[st.session_state["hangman"]['language']]['header_win']).rstrip()
+            + "\n\n" 
+            + lang_dict[st.session_state["hangman"]['language']]['msg_success'].format(solution=st.session_state["hangman"]["solution"]),
+            language=None
+              )
+    else:
+      st.code(
+          Figlet(font=st.session_state["hangman"]['figlet']).renderText(lang_dict[st.session_state["hangman"]['language']]['header_lost']).rstrip()
+          + "\n\n"
+          + figures[st.session_state["hangman"]['figure']][6]
+          + "\n\n"
+          + lang_dict[st.session_state["hangman"]['language']]['msg_reveal'].format(solution=st.session_state["hangman"]["solution"]),
+          language=None
+             )
+
+    st.write("")
+    
+    refresh()
+    if st.button("Restart"):
+        initial_setup()
+        st.rerun()
+
+def run_game():
+    initial_setup()       
+    if "solution" not in st.session_state["hangman"].keys():
+
+        settings_display()        
+    else:
+        if st.session_state["hangman"]["remaining_guesses"] == 0 or st.session_state["hangman"]["letters_to_guess"] == 0:
+            final_display()
+        else:
+            game_display()   
+    

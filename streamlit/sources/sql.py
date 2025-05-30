@@ -439,14 +439,7 @@ def update_game(game_id, game_df, sql_engine):
 def update_week(week, season, game_type, sql_engine):
     def update_game_in_db(game_id, status, games_df, sql_engine):
         update_game(game_id, games_df.loc[game_id, :], sql_engine)
-        if(games_df.loc[game_id, 'game_status']>status):
-            plays_df, _ = get_plays([game_id], sql_engine)
-            if(len(plays_df)>0):
-                append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
-            percentages_df = get_probabilities([game_id], sql_engine)
-            if(len(percentages_df)>0):
-                append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
-        elif(games_df.loc[game_id, 'game_status']=='2'):
+        if (games_df.loc[game_id, 'game_status']!=status) or (games_df.loc[game_id, 'game_status']=='2'):
             plays_df, _ = get_plays([game_id], sql_engine)
             if(len(plays_df)>0):
                 append_new_rows(plays_df, 'plays', sql_engine, 'play_id')

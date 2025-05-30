@@ -17,11 +17,12 @@ st.markdown("""
 st.markdown("""
 - **DataAquisition**: Learn more about the underlying data and its origins.
 - **ML/AI models**: Explanation of the different machine learning models and generative AIs.
+- **WBS bootcamp**: Brief explanation about the origins of this project.
 """)
 st.markdown("""
-- **Chat**: Chat with other users. (experimental)
+- **Chat**: Chat with other users.
 - **Provide Feedback**: Let me know what could be done to improve the app or report bugs.
-- **User Login**: Login to get admin rights.
-- **Games**: Some NFL-themed games. (under construction)
+- **User Login**: Login to get user or admin rights.
+- **Games**: Some NFL-themed games (Hangman, Sudokus, PixelLogos, NFL-Idler).
 - **Memes**: AI summarized memes. (currently broken)
 """)
