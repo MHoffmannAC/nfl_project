@@ -114,8 +114,8 @@ def run_game():
         #saved = load_progress(username)
         #st.session_state.game_state = saved if saved else {
         st.session_state.game_state = {
-            "money": 2e10,
-            "total_money": 2e10,
+            "money": 25,
+            "total_money": 25,
             "fans": 0,
             "income_items": {k: {"level": 0, "last_collected": 0} for k in income_sources},
             "income_per_second": 0,
