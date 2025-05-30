@@ -64,25 +64,33 @@ for post in latest_images:
 
 
 
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import time
 import requests
-from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.core.os_manager import ChromeType
 from streamlit_server_state import server_state, server_state_lock, no_rerun
 
-options = Options()
-options.add_argument("--headless")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-options.add_argument("--window-size=1920x1080")
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType
 
-service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
-driver = webdriver.Chrome(service=service, options=options)
+@st.cache_resource
+def get_driver():
+    return webdriver.Chrome(
+        service=Service(
+            ChromeDriverManager(
+                #chrome_type=ChromeType.CHROMIUM
+                ).install()
+        ),
+        options=options,
+    )
+
+options = Options()
+options.add_argument("--disable-gpu")
+options.add_argument("--headless")
+
+driver = get_driver()
 
 username = "nflmemes_ig" 
 url = f"https://www.instagram.com/{username}/"
@@ -107,7 +115,7 @@ for container in soup.find_all("div", class_="_aagv"):
     if img and img.get("src"):
         src = img["src"]
         alt = img.get("alt", "")
-        if not src in [i['src'] for i in server_state_lock["memes"]]:
+        if not src in [i['src'] for i in server_state["memes"]]:
             with no_rerun:
                 with server_state_lock["memes"]:
                     server_state["memes"].append({"src": src, "alt": alt, "ai": ""})
