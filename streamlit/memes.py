@@ -66,12 +66,12 @@ for post in latest_images:
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+#from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import time
 import requests
-from webdriver_manager.chrome import ChromeDriverManager
+#from webdriver_manager.chrome import ChromeDriverManager
 from streamlit_server_state import server_state, server_state_lock, no_rerun
 
 options = Options()
