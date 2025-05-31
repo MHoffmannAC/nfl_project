@@ -88,7 +88,7 @@ except Exception as e:
     driver.quit()
     print(e)
 
-for i in range(10):
+for i in range(min(10, len(server_state['memes']))):
     if server_state['memes'][-i].get('ai', "") == "":
         server_state['memes'][-i]['ai'] = get_image_caption(server_state['memes'][-i]['src'], server_state['memes'][-i]['alt'])
     st.divider()        
