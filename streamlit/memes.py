@@ -86,7 +86,7 @@ try:
 except Exception as e:
     driver = get_driver()
     driver.quit()
-    print(e)
+    st.error(e)
 
 for i in range(min(10, len(server_state['memes']))):
     if server_state['memes'][-i].get('ai', "") == "":
