@@ -4,6 +4,7 @@ from streamlit_server_state import server_state, server_state_lock, no_rerun
 import time
 import requests
 from groq import Groq
+import pandas as pd
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -13,13 +14,18 @@ from webdriver_manager.core.os_manager import ChromeType
 
 from bs4 import BeautifulSoup
 
+from urllib.parse import urlparse
+
+from sources.sql import create_sql_engine, text, query_db
+sql_engine = create_sql_engine()
+
 st.title("Memes from nflmemes_ig 'explained' by an AI")
 st.subheader("We let an AI 'explain' to us the latest memes from nflmemes_ig. Let's see whether artificial intelligence gets the jokes...")
 
 if not "memes" in server_state:
     with no_rerun:
         with server_state_lock["memes"]:
-            server_state["memes"] = []
+            server_state["memes"] = [{"src": i['src'], "alt": i['alt'], "ai": i['ai']} for i in query_db(sql_engine, "SELECT * FROM memes;")]
 
 def get_image_caption(image_url, caption):
     client = Groq(api_key=st.secrets['GROQ_TOKEN'])
@@ -41,6 +47,10 @@ def get_image_caption(image_url, caption):
         stop=None,
     )
     return completion.choices[0].message.content
+
+def normalize_url(url):
+    parsed = urlparse(url)
+    return parsed.path.split('/')[-1]
 
 @st.cache_resource(show_spinner=False)
 def get_driver():
@@ -79,21 +89,25 @@ try:
         if img and img.get("src"):
             src = img["src"]
             alt = img.get("alt", "")
-            if not src in [i['src'] for i in server_state["memes"]]:
+            if not normalize_url(src) in [normalize_url(i['src']) for i in server_state["memes"]]:
+                ai = get_image_caption(src, alt)
                 with no_rerun:
                     with server_state_lock["memes"]:
-                        server_state["memes"].append({"src": src, "alt": alt, "ai": ""})
+                        server_state["memes"].append({"src": src, "alt": alt, "ai": ai})
+                with sql_engine.connect() as conn:
+                    conn.execute(
+                        text("INSERT INTO memes (src, alt, ai) VALUES (:src, :alt, :ai)"),
+                        {"src": src, "alt": alt, "ai": ai}
+                    )
+                    conn.commit()
 except Exception as e:
     driver = get_driver()
     driver.quit()
-    st.error(e)
 
 for i in range(min(10, len(server_state['memes']))):
-    if server_state['memes'][-i].get('ai', "") == "":
-        server_state['memes'][-i]['ai'] = get_image_caption(server_state['memes'][-i]['src'], server_state['memes'][-i]['alt'])
     st.divider()        
     cols = st.columns([1,2])
     img_data = requests.get(server_state['memes'][-i]['src']).content
     cols[0].image(img_data, width=300)
     cols[1].text(server_state['memes'][-i]['ai'])
-    
+ 
