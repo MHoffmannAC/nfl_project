@@ -1,5 +1,7 @@
 import streamlit as st
+import pydeck as pdk
 import string
+import pandas as pd
 
 from sources.sql import query_db, create_sql_engine
 sql_engine = create_sql_engine()
@@ -31,6 +33,14 @@ def list_teams():
     }
     </style>
 """, unsafe_allow_html=True)
+    
+    if "display_map" not in st.session_state:
+        st.session_state['display_map'] = False
+    if st.toggle("Display Map", value=st.session_state['display_map']):
+        st.session_state['display_map'] = True
+        map_page()
+        
+        
     teams = query_db(sql_engine, "SELECT team_id, name, logo FROM teams WHERE team_id NOT IN (-2, -1, 31, 32, 38)")
     team_i = 0
     for team in teams:
@@ -116,7 +126,10 @@ def team_page(team_id):
         with columns[player_i % len(columns)]:
             cola, colb = st.columns(2)
             with cola:
-                st.image(player['picture'], width=150)
+                try:
+                    st.image(player['picture'], width=150)
+                except:
+                    st.image(team['logo'], width=150)
             with colb:
                 if st.button(player['name'], key=f"player_{player['player_id']}"):
                     st.session_state["chosen_id"] = player['player_id']
@@ -437,6 +450,49 @@ def college_page(college_id):
                 st.session_state["chosen_tab"] = "Players"
                 st.rerun()
 
+def map_page():
+    
+    teams = pd.DataFrame(query_db(sql_engine, "SELECT * FROM teams WHERE team_id NOT IN (-2, -1, 31, 32, 38)"))
+    teams["lat"] = pd.to_numeric(teams["lat"], errors="coerce")
+    teams["lon"] = pd.to_numeric(teams["lon"], errors="coerce")
+
+    teams["icon_data"] = teams["logo"].apply(lambda url: {
+        "url": url,
+        "width": 128,
+        "height": 128,
+        "anchorY": 128
+    })
+
+    icon_layer = pdk.Layer(
+        type="IconLayer",
+        data=teams,
+        get_icon="icon_data",
+        get_position="[lon, lat]",
+        size_scale=30,
+        pickable=True,
+        id="nfl-icons"
+    )
+
+    view_state = pdk.ViewState(
+        latitude=teams["lat"].mean(),
+        longitude=teams["lon"].mean(),
+        zoom=3
+    )
+
+    selection = st.pydeck_chart(
+        pdk.Deck(
+            map_style="mapbox://styles/mapbox/dark-v9",
+            initial_view_state=view_state,
+            layers=[icon_layer],
+            tooltip={"text": "{name}"}
+        ),
+        on_select="rerun",
+        key="nfl_icon_map"
+    )
+
+    if isinstance(selection, dict) and "objects" in selection['selection'] and selection['selection']["objects"]:
+        st.session_state["chosen_id"] = selection['selection']['objects']['nfl-icons'][0]['team_id']
+        st.rerun()
 
 # Initialize session state variables
 if "chosen_tab" not in st.session_state:
