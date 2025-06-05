@@ -57,7 +57,7 @@ def get_driver():
     return webdriver.Chrome(
         service=Service(
             ChromeDriverManager(
-                chrome_type=ChromeType.CHROMIUM
+#                chrome_type=ChromeType.CHROMIUM
                 ).install()
         ),
         options=options,
@@ -89,7 +89,8 @@ try:
         if img and img.get("src"):
             src = img["src"]
             alt = img.get("alt", "")
-            if not normalize_url(src) in [normalize_url(i['src']) for i in server_state["memes"]]:
+            #if not normalize_url(src) in [normalize_url(i['src']) for i in server_state["memes"]]:
+            if not src in [i['src'] for i in server_state["memes"]]:
                 ai = get_image_caption(src, alt)
                 with no_rerun:
                     with server_state_lock["memes"]:
@@ -100,14 +101,18 @@ try:
                         {"src": src, "alt": alt, "ai": ai}
                     )
                     conn.commit()
+                    
 except Exception as e:
     driver = get_driver()
     driver.quit()
 
 for i in range(min(10, len(server_state['memes']))):
-    st.divider()        
-    cols = st.columns([1,2])
-    img_data = requests.get(server_state['memes'][-i]['src']).content
-    cols[0].image(img_data, width=300)
-    cols[1].text(server_state['memes'][-i]['ai'])
- 
+    placeholder = st.empty()
+    try:
+        img_data = requests.get(server_state['memes'][-i]['src']).content
+        cols = st.columns([1,2])
+        cols[0].image(img_data, width=300)
+        cols[1].text(server_state['memes'][-i]['ai'])
+        placeholder.divider()
+    except Exception as e:
+        placeholder.empty()
