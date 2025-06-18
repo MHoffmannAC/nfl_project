@@ -57,7 +57,7 @@ def get_driver():
     return webdriver.Chrome(
         service=Service(
             ChromeDriverManager(
-#                chrome_type=ChromeType.CHROMIUM
+                chrome_type=ChromeType.CHROMIUM
                 ).install()
         ),
         options=options,
@@ -88,6 +88,7 @@ try:
         img = container.find("img")
         if img and img.get("src"):
             src = img["src"]
+            print(src)
             alt = img.get("alt", "")
             #if not normalize_url(src) in [normalize_url(i['src']) for i in server_state["memes"]]:
             if not src in [i['src'] for i in server_state["memes"]]:
