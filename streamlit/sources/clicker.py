@@ -75,7 +75,7 @@ def run_game():
         total_income = 0
         for name in income_sources:
             if gs["managers"][name] > 0:
-                total_income += income_sources[name]["base_income"] * gs["income_items"][name]['level'] * 5 ** (gs["managers"][name] - 1)
+                total_income += income_sources[name]["base_income"] * gs["income_items"][name]['level'] * manager_factor ** (gs["managers"][name] - 1)
         return total_income
 
     def update_game():
@@ -92,6 +92,8 @@ def run_game():
         st.stop()
 
     base_prices = [25*7**i for i in range(11)]
+
+    manager_factor = 3
 
     income_sources = {
         "Hot Dog Stand": {"base_price": base_prices[0], "price_exp": 1.11, "base_income": 1, "cooldown": 5},
@@ -279,11 +281,11 @@ def run_game():
     for name in gs["income_items"]:
         price = round(income_sources[name]["base_price"] * (income_sources[name]["price_exp"] ** gs["income_items"][name]['level']))
         if (price < 2 * gs["total_money"]):
-            income = income_sources[name]["base_income"] * (gs["income_items"][name]['level']) * 5 ** max(gs["managers"][name] - 1, 0)
+            income = income_sources[name]["base_income"] * (gs["income_items"][name]['level']) * manager_factor ** max(gs["managers"][name] - 1, 0)
 
             st.subheader(f"**{name}** - Level: {gs['income_items'][name]['level']}")
             colA, colB, colC, colD = st.columns([1, 1, 1, 1], gap="large")
-            colA.write(f"Income: {income:,}/s  \n Next: {price:,}$ (+{income_sources[name]['base_income']}/s income)")
+            colA.write(f"Income: {income:,}/s  \n Next: {price:,}$ (+{income_sources[name]['base_income'] * manager_factor ** max(gs['managers'][name] - 1, 0)}/s income)")
 
             with colB:
                 if gs["income_items"][name]['level'] > 0 and gs["managers"][name] == 0:
@@ -337,7 +339,7 @@ def run_game():
                     colD.write(f"Reach lvl. {manager_levels[0]} to hire manager!")
             else:
                 if gs["income_items"][name]['level'] >= manager_levels[gs["managers"][name]]:
-                    if colD.button(f"Improve Manager (income x5)", key=f"mgr_{name}"):
+                    if colD.button(f"Improve Manager (income x{manager_factor})", key=f"mgr_{name}"):
                         gs["managers"][name] += 1
                         st.toast(f"Manager hired for {name}!")
                         st.rerun()

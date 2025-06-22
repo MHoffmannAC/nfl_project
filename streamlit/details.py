@@ -481,7 +481,7 @@ def map_page():
 
     selection = st.pydeck_chart(
         pdk.Deck(
-            map_style="mapbox://styles/mapbox/dark-v9",
+            map_style="mapbox://styles/mapbox/dark-v11",
             initial_view_state=view_state,
             layers=[icon_layer],
             tooltip={"text": "{name}"}

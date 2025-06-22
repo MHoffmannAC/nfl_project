@@ -38,59 +38,60 @@ def find_value_for_label(tree, label):
 
 #format for streamlit_tree_select
 nodes = [
-    {"label": "General", "value": "general"},
-    {"label": "AFC", "value": "afc", "children": [
-        {"label": "AFC East", "value": "afc_east", "children": [
-            {"label": "Buffalo Bills", "value": "buffalo_bills"},
-            {"label": "Miami Dolphins", "value": "miami_dolphins"},
-            {"label": "New England Patriots", "value": "new_england_patriots"},
-            {"label": "New York Jets", "value": "new_york_jets"}
+    {"label": "NFL", "value": "nfl", "children": [
+        {"label": "AFC", "value": "afc", "children": [
+            {"label": "AFC East", "value": "afc_east", "children": [
+                {"label": "Buffalo Bills", "value": "buffalo_bills"},
+                {"label": "Miami Dolphins", "value": "miami_dolphins"},
+                {"label": "New England Patriots", "value": "new_england_patriots"},
+                {"label": "New York Jets", "value": "new_york_jets"}
+            ]},
+            {"label": "AFC North", "value": "afc_north", "children": [
+                {"label": "Baltimore Ravens", "value": "baltimore_ravens"},
+                {"label": "Cincinnati Bengals", "value": "cincinnati_bengals"},
+                {"label": "Cleveland Browns", "value": "cleveland_browns"},
+                {"label": "Pittsburgh Steelers", "value": "pittsburgh_steelers"}
+            ]},
+            {"label": "AFC South", "value": "afc_south", "children": [
+                {"label": "Houston Texans", "value": "houston_texans"},
+                {"label": "Indianapolis Colts", "value": "indianapolis_colts"},
+                {"label": "Jacksonville Jaguars", "value": "jacksonville_jaguars"},
+                {"label": "Tennessee Titans", "value": "tennessee_titans"}
+            ]},
+            {"label": "AFC West", "value": "afc_west", "children": [
+                {"label": "Denver Broncos", "value": "denver_broncos"},
+                {"label": "Kansas City Chiefs", "value": "kansas_city_chiefs"},
+                {"label": "Las Vegas Raiders", "value": "las_vegas_raiders"},
+                {"label": "Los Angeles Chargers", "value": "los_angeles_chargers"}
+            ]}
         ]},
-        {"label": "AFC North", "value": "afc_north", "children": [
-            {"label": "Baltimore Ravens", "value": "baltimore_ravens"},
-            {"label": "Cincinnati Bengals", "value": "cincinnati_bengals"},
-            {"label": "Cleveland Browns", "value": "cleveland_browns"},
-            {"label": "Pittsburgh Steelers", "value": "pittsburgh_steelers"}
+        {"label": "NFC", "value": "nfc", "children": [
+            {"label": "NFC East", "value": "nfc_east", "children": [
+                {"label": "Dallas Cowboys", "value": "dallas_cowboys"},
+                {"label": "New York Giants", "value": "new_york_giants"},
+                {"label": "Philadelphia Eagles", "value": "philadelphia_eagles"},
+                {"label": "Washington Commanders", "value": "washington_commanders"}
+            ]},
+            {"label": "NFC North", "value": "nfc_north", "children": [
+                {"label": "Chicago Bears", "value": "chicago_bears"},
+                {"label": "Detroit Lions", "value": "detroit_lions"},
+                {"label": "Green Bay Packers", "value": "green_bay_packers"},
+                {"label": "Minnesota Vikings", "value": "minnesota_vikings"}
+            ]},
+            {"label": "NFC South", "value": "nfc_south", "children": [
+                {"label": "Atlanta Falcons", "value": "atlanta_falcons"},
+                {"label": "Carolina Panthers", "value": "carolina_panthers"},
+                {"label": "New Orleans Saints", "value": "new_orleans_saints"},
+                {"label": "Tampa Bay Buccaneers", "value": "tampa_bay_buccaneers"}
+            ]},
+            {"label": "NFC West", "value": "nfc_west", "children": [
+                {"label": "Arizona Cardinals", "value": "arizona_cardinals"},
+                {"label": "Los Angeles Rams", "value": "los_angeles_rams"},
+                {"label": "San Francisco 49ers", "value": "san_francisco_49ers"},
+                {"label": "Seattle Seahawks", "value": "seattle_seahawks"}
+            ]}
         ]},
-        {"label": "AFC South", "value": "afc_south", "children": [
-            {"label": "Houston Texans", "value": "houston_texans"},
-            {"label": "Indianapolis Colts", "value": "indianapolis_colts"},
-            {"label": "Jacksonville Jaguars", "value": "jacksonville_jaguars"},
-            {"label": "Tennessee Titans", "value": "tennessee_titans"}
-        ]},
-        {"label": "AFC West", "value": "afc_west", "children": [
-            {"label": "Denver Broncos", "value": "denver_broncos"},
-            {"label": "Kansas City Chiefs", "value": "kansas_city_chiefs"},
-            {"label": "Las Vegas Raiders", "value": "las_vegas_raiders"},
-            {"label": "Los Angeles Chargers", "value": "los_angeles_chargers"}
-        ]}
     ]},
-    {"label": "NFC", "value": "nfc", "children": [
-        {"label": "NFC East", "value": "nfc_east", "children": [
-            {"label": "Dallas Cowboys", "value": "dallas_cowboys"},
-            {"label": "New York Giants", "value": "new_york_giants"},
-            {"label": "Philadelphia Eagles", "value": "philadelphia_eagles"},
-            {"label": "Washington Commanders", "value": "washington_commanders"}
-        ]},
-        {"label": "NFC North", "value": "nfc_north", "children": [
-            {"label": "Chicago Bears", "value": "chicago_bears"},
-            {"label": "Detroit Lions", "value": "detroit_lions"},
-            {"label": "Green Bay Packers", "value": "green_bay_packers"},
-            {"label": "Minnesota Vikings", "value": "minnesota_vikings"}
-        ]},
-        {"label": "NFC South", "value": "nfc_south", "children": [
-            {"label": "Atlanta Falcons", "value": "atlanta_falcons"},
-            {"label": "Carolina Panthers", "value": "carolina_panthers"},
-            {"label": "New Orleans Saints", "value": "new_orleans_saints"},
-            {"label": "Tampa Bay Buccaneers", "value": "tampa_bay_buccaneers"}
-        ]},
-        {"label": "NFC West", "value": "nfc_west", "children": [
-            {"label": "Arizona Cardinals", "value": "arizona_cardinals"},
-            {"label": "Los Angeles Rams", "value": "los_angeles_rams"},
-            {"label": "San Francisco 49ers", "value": "san_francisco_49ers"},
-            {"label": "Seattle Seahawks", "value": "seattle_seahawks"}
-        ]}
-    ]}
 ]
 
 def convert_nodes_to_sac_tree_items(nodes):
@@ -98,7 +99,7 @@ def convert_nodes_to_sac_tree_items(nodes):
         children = [convert_node(child) for child in node.get("children", [])]
         return sac.TreeItem(
             label=node["label"],
-            tooltip=node["value"],  # store original "value" for reference
+            #tooltip=node["value"],  # store original "value" for reference
             children=children if children else None
         )
     return [convert_node(node) for node in nodes]
@@ -123,9 +124,11 @@ with col1:
                             label='## Chat rooms',
                             icon='',
                             checkbox=False,
-                            open_all=False,
+                            open_all=True,
                             on_change=st.rerun,
                             key="antd_tree",
+                            show_line=False
+                            #height=500
                             )
     if selected_nodes:
         if len(selected_nodes) == 1:
@@ -138,8 +141,8 @@ with col1:
             st.session_state["selected_chat_room"] = selected_room_value
             st.rerun()
         st_autorefresh(10000)
-    else:
-        st_autorefresh(1000)
+    #else:
+    #    st_autorefresh(1000)
 
 
 
@@ -176,7 +179,7 @@ if selected_room_value:
                         with server_state_lock[room_key]:
                             server_state[room_key].append(new_message)
                     else:
-                        st.warning("Your text seems inappropriate!")
+                        st.error("Your text seems inappropriate!")
                     st.session_state[message_key] = ""  # Clear input box after sending
 
             st.text_area("Message", key=message_key, placeholder="Type your message or paste an URL to an image", height=100, max_chars=1000, label_visibility="visible", on_change=send_message, help="test")
