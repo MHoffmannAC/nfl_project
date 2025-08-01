@@ -40,3 +40,7 @@ st.write("")
 
 st.header("Video")
 st.video("./streamlit/NFL-WBS_final.mp4")
+
+st.warning("""If you consider diving into the world of Data Science, take a look at the bootcamps of the [WBS Codingschool](https://www.wbscodingschool.com/).
+           
+If you just want to practice some basic Data Science skills, check out these [NFL-themed Exercises](https://nfl-ds-challenges.streamlit.app/).""")
