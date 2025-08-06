@@ -1,19 +1,18 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from time import sleep
 
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import export_graphviz, DecisionTreeClassifier
+from sklearn.tree._tree import TREE_LEAF
 
 import tensorflow as tf
 
 import dill 
 import pickle 
-import matplotlib.pyplot as plt
 from datetime import datetime
 
 from sources.long_queries import query_plays
-from sources.plots import plot_play_probabilities, plot_points, plot_win_probabilities
+from sources.plots import plot_play_probabilities, plot_points, plot_win_probabilities, display_tree, prune_duplicate_leaves
 from sources.sql import query_db, create_sql_engine, get_current_week, get_existing_ids, update_running_game, update_week
 sql_engine = create_sql_engine()
 
@@ -356,28 +355,7 @@ if st.session_state["choice"] == 'User Input (Tree)':
     with st.spinner("Planting Tree..."):
         with open('streamlit/sources/decision_tree_model.pkl', 'rb') as f:
             clf = pickle.load(f)
-         
-        def prune_duplicate_leaves(mdl):
-            TREE_LEAF = -1
-
-            def is_leaf(inner_tree, index):
-                return (inner_tree.children_left[index] == TREE_LEAF and 
-                        inner_tree.children_right[index] == TREE_LEAF)
-
-            def prune_index(inner_tree, decisions, index=0):
-                if not is_leaf(inner_tree, inner_tree.children_left[index]):
-                    prune_index(inner_tree, decisions, inner_tree.children_left[index])
-                if not is_leaf(inner_tree, inner_tree.children_right[index]):
-                    prune_index(inner_tree, decisions, inner_tree.children_right[index])
-                if (is_leaf(inner_tree, inner_tree.children_left[index]) and
-                    is_leaf(inner_tree, inner_tree.children_right[index]) and
-                    (decisions[index] == decisions[inner_tree.children_left[index]]) and 
-                    (decisions[index] == decisions[inner_tree.children_right[index]])):
-                    inner_tree.children_left[index] = TREE_LEAF
-                    inner_tree.children_right[index] = TREE_LEAF
-
-            decisions = mdl.tree_.value.argmax(axis=2).flatten().tolist()
-            prune_index(mdl.tree_, decisions)
+            prune_duplicate_leaves(clf.named_steps['classifier'])
 
     st.title('Interactive Decision Tree Classifier')
 
@@ -410,31 +388,38 @@ if st.session_state["choice"] == 'User Input (Tree)':
         feature_name = clf.named_steps['preprocessing'].get_feature_names_out()[feature].replace('num_pipe__', '').replace('cat_pipe__', '')
 
         # Display the decision
-        st.markdown(f"Is <span class='custom-code'>{feature_name}</span> <= {threshold}?", unsafe_allow_html=True)
+        st.markdown(f"Is&nbsp;&nbsp; <span class='custom-code'>{feature_name}</span> &nbsp; <= &nbsp; {threshold}?", unsafe_allow_html=True)
 
         # Checkbox for each decision
-        if st.checkbox(f"Yes:  `{feature_name}`  <= {threshold}", key=f"left_{current_node}"):
+        if st.checkbox(f"Yes:&nbsp;  `{feature_name}`  <=&nbsp; {threshold}", key=f"left_{current_node}"):
             next_node = tree.children_left[current_node]
-            st.session_state.path.append((feature_name, threshold, True))
+            st.session_state.path.append([feature_name, threshold, True, current_node])
             st.session_state.current_node = next_node
             st.rerun()
 
-        if st.checkbox(f"No:   `{feature_name}`  > {threshold}", key=f"right_{current_node}"):
+        if st.checkbox(f"No:&nbsp;&nbsp;   `{feature_name}`  >&nbsp; {threshold}", key=f"right_{current_node}"):
             next_node = tree.children_right[current_node]
-            st.session_state.path.append((feature_name, threshold, False))
+            st.session_state.path.append([feature_name, threshold, False, current_node])
             st.session_state.current_node = next_node
             st.rerun()
             
-        st.write(f"Current predicted class: {clf.classes_[predicted_class]}")
+        #st.write(f"Current predicted class: {clf.classes_[predicted_class]}")
 
     plot_play_probabilities(clf.classes_, class_probabilities)
 
-            # Show the path taken
-    st.write("Path through the tree:")
-    for step in st.session_state.path:
-        st.write(f"{step[0]} <= {step[1]}? {'True' if step[2] else 'False'}")
-
-
-
-
+    if st.toggle("Toggle to show tree instead", key="show_path"):
+        dtree = clf.named_steps['classifier'] 
+        feature_names = clf.named_steps['preprocessing'].get_feature_names_out()
+        display_tree(dtree, feature_names, highlight=[i[3] for i in st.session_state.path])
+    else:
+        st.write("Path through the tree:")
+        for step in st.session_state.path:
+            st.write(f"{step[0]} <= {step[1]}? {'True' if step[2] else 'False'}")
         
+
+
+
+
+
+
+            

@@ -1,6 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+import os
+from sklearn.tree import export_graphviz
+from sklearn.tree._tree import TREE_LEAF
+import graphviz
+import fitz
+from PIL import Image
+from io import BytesIO
+import re
 
 def plot_play_probabilities(classes, probabilities):
     fig, ax = plt.subplots(figsize=(3, 1.5))
@@ -118,3 +126,90 @@ def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, 
         spine.set_edgecolor("#00093a")
     plt.tight_layout()
     st.pyplot(fig, use_container_width=False)
+    
+
+def prune_duplicate_leaves(mdl):
+    def is_leaf(inner_tree, index):
+        return (inner_tree.children_left[index] == TREE_LEAF and 
+                inner_tree.children_right[index] == TREE_LEAF)
+
+    def prune_index(inner_tree, decisions, index=0):
+        if not is_leaf(inner_tree, inner_tree.children_left[index]):
+            prune_index(inner_tree, decisions, inner_tree.children_left[index])
+        if not is_leaf(inner_tree, inner_tree.children_right[index]):
+            prune_index(inner_tree, decisions, inner_tree.children_right[index])
+        if (is_leaf(inner_tree, inner_tree.children_left[index]) and
+            is_leaf(inner_tree, inner_tree.children_right[index]) and
+            (decisions[index] == decisions[inner_tree.children_left[index]]) and 
+            (decisions[index] == decisions[inner_tree.children_right[index]])):
+            inner_tree.children_left[index] = TREE_LEAF
+            inner_tree.children_right[index] = TREE_LEAF
+
+    decisions = mdl.tree_.value.argmax(axis=2).flatten().tolist()
+    prune_index(mdl.tree_, decisions)
+
+def display_tree(clf, feature_names, font_size=10, label_font_size=10, highlight=None):
+    os.environ["PATH"] += os.pathsep + r"C:\Program Files\Graphviz\bin"
+
+    dot_data = export_graphviz(clf,
+                            out_file=None,
+                            filled=True,
+                            rounded=True,
+                            special_characters=True,
+                            feature_names=feature_names,
+                            class_names=None,
+                            impurity=False)
+
+    dot_data_lines = dot_data.splitlines()
+    new_dot_data_lines = []
+    tree = clf.tree_
+
+    for line in dot_data_lines:
+        if 'label=<' in line:
+            node_id = int(line.split()[0])
+            label_parts = line.split('label=<')[1].split('>,')[0].split('<br/>')
+            new_label_parts = [part for part in label_parts if 'value =' not in part and 'samples =' not in part]
+            if (tree.children_left[node_id] == TREE_LEAF and 
+                tree.children_right[node_id] == TREE_LEAF):
+                leaf_label = f'{clf.classes_[tree.value[node_id].argmax()]}'
+                new_label_parts.append(leaf_label)
+            new_label = '<br/>'.join(new_label_parts)
+            new_line = line.split('label=<')[0] + f'label=<{new_label}>, fontsize={font_size},' + line.split('>,')[1]
+            if highlight and not node_id in highlight: # and not (tree.children_left[node_id] == tree.children_right[node_id] == -1):
+                new_line = re.sub(r'fillcolor="#[0-9a-fA-F]{6}"', 'fillcolor="#333333", fontcolor="#eeeeee"', new_line)
+            new_dot_data_lines.append(new_line)
+        elif '->' in line:
+            parent_node = int(line.split()[0])
+            child_node = int(line.split()[2].replace(';', ''))
+            if (child_node - parent_node) % 2 == 1:
+                headlabel = f'[labeldistance=2.5, labelangle=45, headlabel="True", fontsize={label_font_size}]'
+            else:
+                headlabel = f'[labeldistance=2.5, labelangle=-45, headlabel="False", fontsize={label_font_size}]'
+            new_line = f'{parent_node} -> {child_node} {headlabel};'
+            new_dot_data_lines.append(new_line)
+        else:
+            new_dot_data_lines.append(line)
+
+    new_dot_data_lines = [(i.replace('pipeline-1__', '')
+                            .replace('pipeline-2__', '')
+                            .replace('num_pipe__', '')
+                            .replace('cat_pipe__', '')
+                            .replace('cat_ordinal__', '')
+                            ) for i in new_dot_data_lines]
+
+    new_dot_data_lines.insert(1, f'    dpi={100};')
+
+    new_dot_data = "\n".join(new_dot_data_lines)
+    custom_tree_graphviz = graphviz.Source(new_dot_data, engine='dot')
+    
+    # Render directly to PNG bytes
+    #png_bytes = custom_tree_graphviz.pipe(format='png')
+    #image = Image.open(BytesIO(png_bytes))
+    #st.image(image, caption="Decision Tree", use_column_width=False)
+    
+    pdf_bytes = custom_tree_graphviz.pipe(format='pdf')
+    doc = fitz.open(stream=pdf_bytes, filetype='pdf')
+    page = doc.load_page(0)
+    pix = page.get_pixmap()
+    img = Image.open(BytesIO(pix.tobytes("ppm")))
+    st.image(img, width=5800)
