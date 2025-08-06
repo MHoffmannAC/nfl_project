@@ -379,7 +379,6 @@ if st.session_state["choice"] == 'User Input (Tree)':
             st.session_state.current_node = 0
             st.session_state.path = []
             st.rerun()
-        st.write(f"Final probabilities:")
 
     else:
         # Current feature and threshold
@@ -407,14 +406,23 @@ if st.session_state["choice"] == 'User Input (Tree)':
 
     plot_play_probabilities(clf.classes_, class_probabilities)
 
-    if st.toggle("Toggle to show tree instead", key="show_path"):
+
+    if "show_tree" not in st.session_state:
+        st.session_state["show_tree"] = False
+
+    toggled = st.toggle("Toggle path visualization (Text or Tree)", value =st.session_state["show_tree"])
+            
+    if toggled:
+        st.session_state["show_tree"] = True
         dtree = clf.named_steps['classifier'] 
         feature_names = clf.named_steps['preprocessing'].get_feature_names_out()
-        display_tree(dtree, feature_names, highlight=[i[3] for i in st.session_state.path])
+        display_tree(dtree, feature_names, highlight=[i[3] for i in st.session_state.path] + [current_node])
     else:
-        st.write("Path through the tree:")
+        st.session_state["show_tree"] = False
+        st.write("Path through the tree:")        
         for step in st.session_state.path:
-            st.write(f"{step[0]} <= {step[1]}? {'True' if step[2] else 'False'}")
+            st.write(f"{step[0]}&nbsp;&nbsp;&nbsp;<=&nbsp;&nbsp;&nbsp;{step[1]}&nbsp;?&nbsp;&nbsp; {'True' if step[2] else 'False'}")
+            
         
 
 

@@ -202,6 +202,8 @@ def display_tree(clf, feature_names, font_size=10, label_font_size=10, highlight
     new_dot_data = "\n".join(new_dot_data_lines)
     custom_tree_graphviz = graphviz.Source(new_dot_data, engine='dot')
     
+    #st.graphviz_chart(custom_tree_graphviz, width=5000)
+    
     # Render directly to PNG bytes
     #png_bytes = custom_tree_graphviz.pipe(format='png')
     #image = Image.open(BytesIO(png_bytes))
