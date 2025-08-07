@@ -87,6 +87,7 @@ teams = pd.DataFrame(query_db(sql_engine, f"SELECT * FROM teams;"))
 if all([game['game_status'] == '3' for game in games]):
     choice = st.segmented_control("Which games to display", ["All games", "Top games of the week"], default="All games", selection_mode="single")
 else:
+    st.dataframe(pd.DataFrame(games), use_container_width=True)
     choice = "All games"
 
 st.write("")
