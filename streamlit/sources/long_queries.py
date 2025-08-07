@@ -164,3 +164,24 @@ def query_plays(game_id):
                 ps.play_id ASC
             """
     return query
+
+def query_week(week, season, game_type):
+    query = f"""
+            SELECT 
+                g.game_id, p.play_id, th.name as home_team, p.homeScore as home_score, p.awayScore as away_score, ta.name as away_team, pb.homeWinPercentage as home_wp, pb.awayWinPercentage as away_wp, TIME_TO_SEC(p.clock) +  (4-p.quarter ) * 15 * 60 as time_left
+            FROM
+                probabilities pb
+                    JOIN
+                games g USING (game_id)
+                    JOIN
+                teams th ON th.team_id = g.home_team_id
+                    JOIN
+                teams ta ON ta.team_id = g.away_team_id
+                    JOIN 
+                plays p ON p.sequenceNumber = pb.sequenceNumber AND p.game_id = pb.game_id
+            WHERE
+                season = {season} AND week = {week} AND game_type = '{game_type}'
+            ORDER BY
+                g.game_id, p.play_id;
+            """
+    return query

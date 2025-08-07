@@ -96,7 +96,7 @@ def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, 
     #plt.fill_between(timeLeft / 60, homeScore, awayScore, where=(homeScore < awayScore), interpolate=True, color=f"#{awayColor}", alpha=0.5)
     plt.fill_between(timeLeft_post / 60, homeScore_post, 0, where=(homeScore_post > awayScore_post), interpolate=True, color=f"#{homeColor}", alpha=0.5)
     plt.fill_between(timeLeft_post / 60, awayScore_post, 0, where=(homeScore_post < awayScore_post), interpolate=True, color=f"#{awayColor}", alpha=0.5)
-    plt.fill_between(timeLeft_post / 60, awayScore_post, 0, where=(homeScore_post == awayScore_post), interpolate=True, color=f"#111", alpha=0.75)
+    plt.fill_between(timeLeft_post / 60, awayScore_post, 0, where=(homeScore_post == awayScore_post), interpolate=True, color=f"#DDDDDD", alpha=0.75)
 
     for time in range(0, 3600, 900):  # 900 seconds = 15 minutes
         ax.axvline(time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7)
