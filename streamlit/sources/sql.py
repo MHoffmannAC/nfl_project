@@ -189,7 +189,10 @@ def append_new_rows(dataframe, table, sql_engine, id_column):
 def query_db(sql_engine, query, **params):
     with sql_engine.connect() as conn:
         result = conn.execute(text(query), params)
-        return [dict(row._mapping) for row in result]
+        if result.returns_rows:
+            return [dict(row._mapping) for row in result]
+        else:
+            conn.commit()
 
 def load_game_data(events, sql_engine, asDataFrame=False, checkExistence=False):
 
