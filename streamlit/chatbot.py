@@ -1,26 +1,28 @@
 import streamlit as st
 
+from sources.sql import create_sql_engine, query_db
+sql_engine = create_sql_engine()
+
 from langchain_groq import ChatGroq
 
-from langchain_huggingface import HuggingFaceEndpoint, HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
+from langchain.schema import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-#import os
-#os.environ.pop('HF_TOKEN', None)
-#hf_model = "meta-llama/Llama-3.2-3B-Instruct"
-#hf_model = "mistralai/Mistral-7B-Instruct-v0.3"
-#llm = HuggingFaceEndpoint(repo_id=hf_model, huggingfacehub_api_token = st.secrets['HF_TOKEN'])
-# "mixtral-8x7b-32768"
+
 llm = ChatGroq(temperature=0,
                groq_api_key=st.secrets['GROQ_TOKEN'],
                model_name="llama3-70b-8192")
 
 # prompt
 #template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). No need to mention explicitly something like "Based on the provided context". If you don't know the answer based on the provided context, just say "I don't know the answer.".
-template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). No need to mention explicitly something like "Based on the provided context".".
+template = """You are a nice chatbot having a conversation with a human about the NFL.
+              Give only replies based on the provided extracted parts of long documents (the context).
+              Do not say "Based on the provided context" or "According to the context" or similar. Just provide the answer.".
 
 Previous conversation:
 {chat_history}
@@ -47,17 +49,34 @@ def load_vector_db(folder_path):
     return FAISS.load_local(folder_path, embeddings, allow_dangerous_deserialization=True)
 
 # memory
-@st.cache_resource(show_spinner=False)
 def init_memory(_llm):
     return ConversationBufferMemory(
         llm=llm,
         output_key='answer',
         memory_key='chat_history',
         return_messages=True)
+    
+def build_news_vector_db():
+    def chunk_news(news_rows, chunk_size=500, chunk_overlap=50):
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            separators=["\n\n", "\n", ". ", " "]
+        )
 
-memory = init_memory(llm)
-
-##### streamlit #####
+        docs = []
+        for row in news_rows:
+            chunks = text_splitter.split_text(row["story"])
+            for chunk in chunks:
+                docs.append(Document(
+                    page_content=chunk,
+                    metadata={"headline": row["headline"]}
+                ))
+        return docs
+    news_rows = query_db(sql_engine, "SELECT headline, story FROM news WHERE published >= NOW() - INTERVAL 7 DAY")
+    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
+    docs = chunk_news(news_rows)
+    return FAISS.from_documents(docs, embeddings)
 
 # Apply custom CSS
 st.markdown(
@@ -124,15 +143,19 @@ if "selected_topic" not in st.session_state:
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Welcome! Please choose a topic to discuss:"}
+        {"role": "assistant", "content": "Welcome!"},
+        {"role": "assistant", "content": "Please choose a topic to discuss:", "avatar": "⚙️"},
     ]
+    
+if "llms" not in st.session_state:
+    st.session_state.llms = {}
 
 # Display chat messages in a scrollable container
 st.divider()
 with st.container():
     st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
+        with st.chat_message(message["role"], avatar=message.get("avatar")):
             st.markdown(message["content"])
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -141,35 +164,49 @@ def display_topic_buttons():
 
     st.session_state.selected_topic = st.segmented_control("Topic selection", ["Rule Book", "Glossary", "News"], default=None, selection_mode="single", label_visibility="collapsed")
 
+    if st.session_state.selected_topic:
+        if st.session_state.selected_topic not in st.session_state.llms:
+            st.session_state.llms[st.session_state.selected_topic] = {}
+            st.session_state.llms[st.session_state.selected_topic]["memory"] = init_memory(llm)
+
     if st.session_state.selected_topic == "Rule Book":
-        with st.spinner("Updating my rules knowledge, please wait."):
-            st.session_state.vector_db = load_vector_db(faiss_rulebook)
-        st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. Let's dive in!"})
-        st.session_state.selected_topic = True
+        if "vector_db" not in st.session_state.llms[st.session_state.selected_topic]:
+            with st.spinner("Updating my rules knowledge, please wait."):
+                st.session_state.llms[st.session_state.selected_topic]["vector_db"] = load_vector_db(faiss_rulebook)
+        st.session_state.messages.append({"role": "assistant", "content": "You've selected *Rule Book*. (Type 'Change topic' to change selection)", "avatar": "⚙️"})
+        st.session_state.messages.append({"role": "assistant", "content": "Let's dive in!"})
         st.session_state.input_message = "Let's discuss some NFL rules!"
 
     if st.session_state.selected_topic == "Glossary":
-        with st.spinner("Studying glossary, please wait."):
-            st.session_state.vector_db = load_vector_db(faiss_glossary)
-        st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. Let's dive in!"})
-        st.session_state.selected_topic = True
+        if "vector_db" not in st.session_state.llms[st.session_state.selected_topic]:
+            with st.spinner("Studying glossary, please wait."):
+                st.session_state.llms[st.session_state.selected_topic]["vector_db"] = load_vector_db(faiss_glossary)
+        st.session_state.messages.append({"role": "assistant", "content": "You've selected *Glossary*. (Type 'Change topic' to change selection)", "avatar": "⚙️"})
+        st.session_state.messages.append({"role": "assistant", "content": "Let's dive in!"})
         st.session_state.input_message = "Let's discuss some NFL glossary!"
 
     if st.session_state.selected_topic == "News":
-        with st.spinner("Studying latest news, please wait."):
-            st.session_state.vector_db = load_vector_db(faiss_news)
-        st.session_state.messages.append({"role": "assistant", "content": "You've selected *News*. Let's dive in!"})
-        st.session_state.selected_topic = True
+        if "vector_db" not in st.session_state.llms[st.session_state.selected_topic]:
+            with st.spinner("Studying latest news, please wait."):
+                st.session_state.llms[st.session_state.selected_topic]["vector_db"] = build_news_vector_db()
+        st.session_state.messages.append({"role": "assistant", "content": "You've selected *News*. (Type 'Change topic' to change selection)", "avatar": "⚙️"})
+        st.session_state.messages.append({"role": "assistant", "content": "Let's dive in!"})
         st.session_state.input_message = "Let's discuss some NFL news!"
-
+        
+    if st.session_state.selected_topic:
+        st.rerun()
+        
     st.write("")
 
 if not st.session_state.selected_topic:
     display_topic_buttons()
 
 # Start conversation if topic is selected
+
 if st.session_state.selected_topic:
-    retriever = st.session_state.vector_db.as_retriever(search_kwargs={"k": 5})
+    memory = st.session_state.llms[st.session_state.selected_topic]["memory"]
+    retriever = st.session_state.llms[st.session_state.selected_topic]["vector_db"].as_retriever(search_kwargs={"k": 5})
+    
     chain = ConversationalRetrievalChain.from_llm(llm,
                                                   retriever=retriever,
                                                   memory=memory,
@@ -186,8 +223,10 @@ if st.session_state.selected_topic:
     if prompt:
         if prompt.lower() == "change topic":
             st.session_state.selected_topic = False
-            st.chat_message("assistant").markdown("Sure! Let's change the topic. Please choose a new topic:")
-            st.session_state.messages.append({"role": "assistant", "content": "Sure! Let's change the topic. Please choose a new topic:"})
+            st.chat_message("assistant").markdown("Sure! Let's change the topic.")
+            st.chat_message("assistant", avatar="⚙️").markdown("Please choose a new topic:")
+            st.session_state.messages.append({"role": "assistant", "content": "Sure! Let's change the topic."})
+            st.session_state.messages.append({"role": "assistant", "content": "Please choose a new topic:", "avatar": "⚙️"})
             display_topic_buttons()
         else:
             # Display user message
