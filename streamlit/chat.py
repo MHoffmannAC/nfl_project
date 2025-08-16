@@ -5,15 +5,27 @@ from streamlit_autorefresh import st_autorefresh
 
 from datetime import datetime
 from profanity_check import predict
+import pandas as pd
 
-from sources.sql import validate_username
+from sources.sql import validate_username, create_sql_engine, query_db
+sql_engine = create_sql_engine()
 
-
-# Initialize "rooms" in server_state if not already present
-if "rooms" not in server_state:
+# Initialize "chat_rooms" in server_state if not already present
+if "chat_rooms" not in server_state:
     with no_rerun:
-        with server_state_lock["rooms"]:
-            server_state["rooms"] = []
+        with server_state_lock["chat_rooms"]:
+            server_state["chat_rooms"] = {}
+            previous_messages = pd.DataFrame(query_db(sql_engine, "SELECT * FROM chat;"))
+            for room_key in previous_messages["room_name"].unique():
+                if room_key not in server_state["chat_rooms"]:
+                    server_state["chat_rooms"][room_key] = []
+                for _, room in previous_messages.loc[previous_messages["room_name"] == room_key].iterrows():
+                    server_state["chat_rooms"][room_key].append({
+                        "message_id": room["message_id"],
+                        "chat_username": room["username"],
+                        "text": room["message_text"],
+                        "time": room["timestamp"]
+                    })
 
 def extract_all_values(nodes):
     values = []
@@ -109,9 +121,9 @@ rooms = extract_all_values(nodes)
 for room in rooms:
     room_key = f"room_{room}"
     with no_rerun:
-        if room_key not in server_state:
-            with server_state_lock[room_key]:
-                server_state[room_key] = []
+        if room_key not in server_state["chat_rooms"]:
+            with server_state_lock["chat_rooms"]:
+                server_state["chat_rooms"][room_key] = []
 
 col1, col2 = st.columns([2, 4], gap="large")
 
@@ -175,9 +187,17 @@ if selected_room_value:
                 message_text = st.session_state.get(message_key, "").strip()
                 if message_text:
                     if predict([message_text]) == 0:
-                        new_message = {"chat_username": st.session_state["chat_username"], "text": message_text, "time": datetime.now()}
-                        with server_state_lock[room_key]:
-                            server_state[room_key].append(new_message)
+                        timestamp = datetime.now()
+                        query_db(sql_engine, "INSERT INTO chat (room_name, username, message_text, timestamp) VALUES (:room_name, :username, :message_text, :timestamp);",
+                                 room_name=room_key,
+                                 username=st.session_state["chat_username"],
+                                 message_text=message_text,
+                                 timestamp=timestamp)
+                        message_id = query_db(sql_engine, "SELECT LAST_INSERT_ID() as message_id;")[0]["message_id"]
+                        new_message = {"message_id": message_id, "chat_username": st.session_state["chat_username"], "text": message_text, "time": timestamp}
+                        with server_state_lock["chat_rooms"]:
+                            server_state["chat_rooms"][room_key].append(new_message)
+
                     else:
                         st.error("Your text seems inappropriate!")
                     st.session_state[message_key] = ""  # Clear input box after sending
@@ -186,24 +206,26 @@ if selected_room_value:
 
         # Display chat history
         st.subheader("Chat history:")
-        with server_state_lock[room_key]:
-            msg_to_delete = None
-            
-            for msg in server_state[room_key][::-1]:
-                cols = st.columns([2,9,1], gap="medium")
-                with cols[0]:
-                    st.write(f"**{msg['chat_username']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
-                with cols[1]:
-                    try:
-                        st.image(msg['text'], width=250)
-                    except:
-                        st.write(f"{msg['text']}")
-                    
-                if st.session_state.get("roles", False) == "admin":
-                    with cols[2]:
-                        if st.button("❌", key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}"):
-                            msg_to_delete = msg
-                            with server_state_lock[room_key]:
-                                server_state[room_key].remove(msg_to_delete)
-                            st.rerun()
-                st.divider()
+        #with server_state_lock[room_key]:
+        msg_to_delete = None
+        
+        for msg in server_state["chat_rooms"][room_key][::-1]:
+            cols = st.columns([2,9,1], gap="medium")
+            with cols[0]:
+                st.write(f"**{msg['chat_username']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
+            with cols[1]:
+                try:
+                    st.image(msg['text'], width=250)
+                except:
+                    st.write(f"{msg['text']}")
+                
+            if st.session_state.get("roles", False) == "admin":
+                with cols[2]:
+                    if st.button("❌", key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}"):
+                        msg_to_delete = msg
+                        query_db(sql_engine, "DELETE FROM chat WHERE message_id = :message_id;", message_id=msg["message_id"])
+                        with server_state_lock["chat_rooms"]:
+                            server_state["chat_rooms"][room_key].remove(msg_to_delete)
+
+                        st.rerun()
+            st.divider()

@@ -17,7 +17,7 @@ st.header("Slides")
 if "wbs_page" not in st.session_state:
     st.session_state["wbs_page"] = 1
 
-doc = fitz.open("WBS-final_project.pdf")
+doc = fitz.open("./ressources/WBS-final_project.pdf")
 num_pages = len(doc)
 
 page = doc[st.session_state["wbs_page"] - 1]
@@ -39,7 +39,7 @@ st.write("")
 st.write("")
 
 st.header("Video")
-st.video("./streamlit/NFL-WBS_final.mp4")
+st.video("./ressources/NFL-WBS_final.mp4")
 
 st.warning("""If you consider diving into the world of Data Science, take a look at the bootcamps of the [WBS Codingschool](https://www.wbscodingschool.com/).
            
