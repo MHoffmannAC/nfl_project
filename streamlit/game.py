@@ -2,11 +2,11 @@ import streamlit as st
 from streamlit.components.v1 import iframe
 import sources.hangman as hangman
 import sources.pixellogo as pixellogo
-import sources.clicker as clicker
+
 
 st.title("Collection of NFL-themed Games")
 
-game = st.segmented_control("Select a game", ["Hangman (Singleplayer)", "Sudoku (Singleplayer)", "PixelLogos (Multiplayer)", "NFL-Idler (under construction)"],  default="Hangman (Singleplayer)")
+game = st.segmented_control("Select a game", ["Hangman (Singleplayer)", "Sudoku (Singleplayer)", "PixelLogos (Multiplayer)", "NFL-Idler (under construction)", "New"],  default=None)
 
 if game == "Sudoku (Singleplayer)":
     st.header("2025")
@@ -19,8 +19,7 @@ elif game == "Hangman (Singleplayer)":
 elif game == "PixelLogos (Multiplayer)":
     pixellogo.initialize_game()
     pixellogo.display_game()
-elif game == "NFL-Idler (under construction)":
-    clicker.run_game()
+
 else:
     st.header("Please select a game from the choices above")
     st.write("""**Available games**:
