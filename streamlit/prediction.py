@@ -88,7 +88,6 @@ if st.session_state["choice"] == "Live Game":
     st.session_state["game_name_selected"] = st.selectbox("Games", options=[i['name'] for i in running_games], index=None if st.session_state["game_name_selected"]==None else [i['name'] for i in running_games].index(st.session_state["game_name_selected"]), placeholder="Please select a game")
     game_selected = game_mapping[st.session_state["game_name_selected"]]
     if game_selected:
-        #st.write(f"You selected: {game_selected['game_id']}")
         query = query_plays(game_selected['game_id'])
         plays = query_db(sql_engine, query)
         plays_df = pd.DataFrame(plays)
@@ -96,9 +95,6 @@ if st.session_state["choice"] == "Live Game":
         plays_df['passToRushRatio'] = plays_df['passToRushRatio'].fillna(1)
         plays_df = plays_df.loc[plays_df['next_down']>0]
         play_data = plays_df.iloc[-1]
-        #import random
-        #play_data = plays_df.iloc[random.randint(0,len(plays_df))]
-        #st.error("we are currently not using the last play, remember to change it!!")
         st.session_state["play_data"] = play_data
         if(play_data['next_down']<1):
             col1, _, col3 = st.columns(3)
@@ -106,12 +102,9 @@ if st.session_state["choice"] == "Live Game":
                 st.write("Next play is a PAT or 2PT attempt. No model for this yet!")
             with col3:
                 display_buttons("PAT")
-        # else:
-        #     st.write(play_data['play_id'])
 
 elif st.session_state["choice"] == "User Input (Full)":
 
-    # default values:
     if "play_data" in st.session_state:
         play_data = st.session_state["play_data"]
     else:
@@ -155,6 +148,8 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
     col1, col2, _ = st.columns(3)
 
     all_teams = list(get_existing_ids(sql_engine, 'teams', 'name'))
+    team_to_abr = {i["name"]: i["abbreviation"] for i in query_db(sql_engine, "SELECT abbreviation, name FROM teams;")}
+    team_to_color = {i["name"]: i["color"] for i in query_db(sql_engine, "SELECT color, name FROM teams;")}
 
     with col1:
         home_team = st.selectbox("Select Home Team", options=all_teams, index=all_teams.index(play_data['homeName']), disabled=(st.session_state["choice"] == "Live Game"))
@@ -291,6 +286,8 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
     st.divider()
 
     prediction_data = {'quarter': quarter, 'clock_seconds': clock_seconds, 'offenseAtHome': 1 if team_possession==home_team else 0, 'down': down, 'distance': yards_for_first, 'yardsToEndzone': yards_to_endzone, 'season': season, 'game_type': "regular-season" if game_type=="Regular" else "post-season", 'week': week,
+    'homeScore': home_score,
+    'awayScore': away_score,
     'offenseScore': home_score if team_possession==home_team else away_score,
     'defenseScore': away_score if team_possession==home_team else home_score,
     'scoreDiff': home_score-away_score if team_possession==home_team else away_score-home_score,
@@ -306,8 +303,22 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
     'standing_defense_overall_loss': standing_away_overall_loss if team_possession==home_team else standing_home_overall_loss,
     'standing_defense_home_loss': standing_away_home_loss if team_possession==home_team else standing_home_home_loss,
     'standing_defense_road_loss': standing_away_road_loss if team_possession==home_team else standing_home_road_loss,
-    'offenseAbr': play_data['homeAbr'] if team_possession==home_team else play_data['awayAbr'],
-    'defenseAbr': play_data['awayAbr'] if team_possession==home_team else play_data['homeAbr'],
+    'standing_home_overall_win': standing_home_overall_win,
+    'standing_home_home_win': standing_home_home_win,
+    'standing_home_road_win': standing_home_road_win,
+    'standing_home_overall_loss': standing_home_overall_loss,
+    'standing_home_home_loss': standing_home_home_loss,
+    'standing_home_road_loss': standing_home_road_loss,
+    'standing_away_overall_win': standing_away_overall_win,
+    'standing_away_home_win': standing_away_home_win,
+    'standing_away_road_win': standing_away_road_win,
+    'standing_away_overall_loss': standing_away_overall_loss,
+    'standing_away_home_loss': standing_away_home_loss,
+    'standing_away_road_loss': standing_away_road_loss,
+    'homeAbr': team_to_abr[home_team],
+    'awayAbr': team_to_abr[away_team],
+    'offenseAbr': team_to_abr[home_team] if team_possession==home_team else team_to_abr[away_team],
+    'defenseAbr': team_to_abr[away_team] if team_possession==home_team else team_to_abr[home_team],
     'totalTimeLeft': (clock_seconds + (4 - quarter) * 15 * 60), 'completionRate': play_data['completionRate'], 'passToRushRatio': play_data['passToRushRatio']}
 
     with open('streamlit/sources/nn_classifier.pkl', 'rb') as f:
@@ -327,6 +338,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
 
     with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
         nn_regressor = dill.load(f)
+    st.divider()
     if (st.session_state["choice"] == "Live Game"):
         with col2:
             display_buttons("bottom")
@@ -340,12 +352,53 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
             plot_points(plays_df['totalTimeLeft'], plays_df['homeScore'], plays_df['awayScore'], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
     else:
         st.subheader("Win probabilities:")
-        play_data = pd.Series(play_data)
-        probabilities = nn_regressor.predict(pd.DataFrame(play_data).T)
-        st.write(f"Home team win probability: {np.round(probabilities[0][0]*100)}%")
-        st.write(f"Away team win probability: {np.round(probabilities[0][1]*100)}%")
-        if (np.round(probabilities[0][2]*100))>0:
-            st.write(f"Tie probability: {np.round(probabilities[0][1]*100)}%")
+        probabilities = nn_regressor.predict(pd.DataFrame.from_dict(prediction_data, orient='index').T)
+        #st.write(f"Home team win probability: {np.round(probabilities[0][0]*100)}%")
+        #st.write(f"Away team win probability: {np.round(probabilities[0][1]*100)}%")
+        #if (np.round(probabilities[0][2]*100))>0:
+        #    st.write(f"Tie probability: {np.round(probabilities[0][2]*100)}%")
+            
+        home_prob = probabilities[0][0] * 100
+        away_prob = probabilities[0][1] * 100
+        tie_prob = probabilities[0][2] * 100
+
+        st.subheader("Win probabilities:")
+
+        def render_side(prob, color, left_text="", right_text="", show_text=True):
+            if not show_text:
+                return f'<div style="flex:{prob}; background-color:{color}; overflow:hidden;"></div>'
+            return (f'<div style="flex:{prob}; background-color:{color}; display:flex; '
+                    f'justify-content:space-between; align-items:center; padding:0 8px; '
+                    f'color:white; font-weight:bold;">'
+                    f'<span style="text-align:left;">{left_text}</span>'
+                    f'<span style="text-align:right;">{right_text}</span>'
+                    f'</div>')
+
+        home_html = render_side(
+            prob=home_prob,
+            color=f"#{team_to_color[home_team]}",
+            left_text=team_to_abr[home_team],
+            right_text=f"{home_prob:.0f}%",
+            show_text=home_prob > 10
+        )
+
+        tie_html = render_side(
+            prob=tie_prob,
+            color="#444444",
+            show_text=False
+        )
+
+        away_html = render_side(
+            prob=away_prob,
+            color=f"#{team_to_color[away_team]}",
+            left_text=f"{away_prob:.0f}%",
+            right_text=team_to_abr[away_team],
+            show_text=away_prob > 10
+        )
+
+        bar_html = f'<div style="display:flex; height:40px; width:50%; border-radius:8px; overflow:hidden; border:1px solid #ccc;">{home_html}{away_html}</div>'
+
+        st.markdown(bar_html, unsafe_allow_html=True)
 
 
 
