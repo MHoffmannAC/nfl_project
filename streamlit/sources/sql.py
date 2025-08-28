@@ -185,6 +185,22 @@ def append_new_rows(dataframe, table, sql_engine, id_column):
     else:
         new_rows = dataframe[~dataframe.index.isin(existing_ids_set)]
         new_rows.to_sql(table, con=sql_engine, if_exists='append', index=True, index_label=id_column)
+        
+def append_or_update_rows(dataframe, table, sql_engine, id_column):
+    existing_ids_set = get_existing_ids(sql_engine, table, id_column)
+
+    if not existing_ids_set:
+        dataframe.to_sql(table, con=sql_engine, if_exists='append', index=True, index_label=id_column)
+    else:
+        new_rows = dataframe[~dataframe.index.isin(existing_ids_set)]
+        existing_rows = dataframe[dataframe.index.isin(existing_ids_set)]
+        if not new_rows.empty:
+            new_rows.to_sql(table, con=sql_engine, if_exists='append', index=True, index_label=id_column)
+        for idx, row in existing_rows.iterrows():
+            update_dict = row.to_dict()
+            set_clause = ", ".join([f"{col} = :{col}" for col in update_dict.keys()])
+            query = f"UPDATE {table} SET {set_clause} WHERE {id_column} = :id"
+            query_db(sql_engine, query, **update_dict, id=idx)
 
 def query_db(sql_engine, query, **params):
     with sql_engine.connect() as conn:
@@ -558,3 +574,96 @@ def validate_username(username):
             and 
                 (predict([username]) == 0) 
             )
+    
+    
+    
+def get_players(team_id=None):
+    sql_engine = create_sql_engine()
+    
+    players = []
+    status_data = {}
+    colleges = set()
+
+    _, season, _ =  get_current_week()
+    
+    if team_id is not None:
+        team_ids = [team_id]
+    else:
+        team_ids = [i["team_id"] for i in query_db(sql_engine, "SELECT team_id FROM teams WHERE team_id NOT IN (-2, -1, 31, 32, 38)")]
+
+    for team_id in team_ids:
+        query_db(sql_engine, f"UPDATE players SET active=0, status_id=999, team_id=Null WHERE player_id>0 AND team_id={team_id};")
+        url = f"https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/{season}/teams/{team_id}/athletes?limit=200"
+        team_response = requests.get(url)
+        team_roster = team_response.json()
+        st.write("Processing team", team_id, "with", len(team_roster.get('items', [])), "players")
+        for i in range(len(team_roster['items'])):
+            player_response = requests.get(team_roster['items'][i]['$ref'])
+            player_data = player_response.json()
+            player = {}
+            player['player_id'] = player_data.get('id', None)
+            player['team_id'] = team_id
+            player['firstName'] = player_data.get('firstName', None)
+            player['lastName'] = player_data.get('lastName', None)
+            player['weight'] = player_data.get('weight', None)
+            player['height'] = player_data.get('height', None)
+            player['age'] = player_data.get('age', None)
+            player['link'] = player_data.get('links', [{}])[0].get('href', None)
+            player['country'] = player_data.get('birthPlace', {}).get('country', None)
+            player['picture'] = player_data.get('headshot', {}).get('href', None)
+            player['jersey'] = player_data.get('jersey', None)
+            player['position_id'] = player_data.get('position', {}).get('id', None)
+            player['experience'] = player_data.get('experience', {}).get('years', None)
+            player['active'] = player_data.get('active', None)
+            player['status_id'] = player_data.get('status', {}).get('id', None)
+            player['college_id'] = player_data.get('college', {}).get('$ref', 'unknown').split('/')[-1].split('?')[0]
+            if player['college_id'] == 'unknown':
+                player['college_id'] = None
+            else:
+                colleges.add(player['college_id'])
+            
+            status_data[player['status_id']] = player_data.get('status', {}).get('name', None)
+            
+            players.append(player)
+
+    players_df = pd.DataFrame(players)
+    players_df['player_id'] = players_df['player_id'].astype('Int64')
+    players_df['status_id'] = players_df['status_id'].astype('Int64')
+    players_df['college_id'] = players_df['college_id'].astype('Int64')
+    players_df.sort_values(by='player_id', inplace=True)
+    players_df.set_index('player_id', inplace=True)
+
+    status_df = pd.DataFrame(list(status_data.items()), columns=['status_id', 'name'])
+    status_df['status_id'] = status_df['status_id'].astype('Int64')
+    status_df.sort_values(by='status_id', inplace=True)
+    status_df.set_index('status_id', inplace=True)
+
+    colleges_df = get_colleges(colleges)
+
+    players_df = players_df.astype(object).where(pd.notnull(players_df), None)
+    colleges_df = colleges_df.astype(object).where(pd.notnull(colleges_df), None)
+    status_df   = status_df.astype(object).where(pd.notnull(status_df), None)
+
+    append_new_rows(colleges_df, 'colleges', sql_engine, 'college_id')
+    append_new_rows(status_df, 'playerstatuses', sql_engine, 'status_id')
+    append_or_update_rows(players_df, 'players', sql_engine, 'player_id')
+    
+    st.rerun()
+
+def get_colleges(college_ids):
+    colleges = []
+    for college_id in list(college_ids):
+        url = f"http://sports.core.api.espn.com/v2/colleges/{college_id}?lang=en&region=us"
+        college_response = requests.get(url)
+        college_data = college_response.json()
+        college = {}
+        college['college_id'] = college_id
+        college['name'] = college_data.get('name', None)
+        college['abbreviation'] = college_data.get('abbrev', None)
+        college['logo'] = college_data.get('logos', [{}])[0].get('href', None)
+        college['mascot'] = college_data.get('mascot', None)
+        colleges.append(college)
+    colleges_df = pd.DataFrame(colleges)
+    colleges_df['college_id'] = colleges_df['college_id'].astype('Int64')
+    colleges_df.set_index('college_id', inplace=True)
+    return colleges_df

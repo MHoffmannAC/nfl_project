@@ -3,7 +3,7 @@ import pydeck as pdk
 import string
 import pandas as pd
 
-from sources.sql import query_db, create_sql_engine
+from sources.sql import query_db, create_sql_engine, get_players
 sql_engine = create_sql_engine()
 
 def list_teams():
@@ -526,6 +526,15 @@ if st.session_state["chosen_tab"] == "Teams":
         if st.button("Back to Teams List"):
             reset_navigation()
         team_page(st.session_state["chosen_id"])
+        if st.session_state.get("roles", False) == "admin":
+            st.divider()
+            st.header("Admin settings")
+            if st.button("Update all rosters"):
+                with st.spinner("Updating rosters"):
+                    get_players()
+            if st.button("Update current roster"):
+                with st.spinner("Updating roster"):
+                    get_players(team_id=st.session_state["chosen_id"])
 
 
 
@@ -552,3 +561,4 @@ elif st.session_state["chosen_tab"] == "Colleges":
         if st.button("Back to Colleges List"):
             reset_navigation()
         college_page(st.session_state["chosen_id"])
+        
