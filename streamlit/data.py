@@ -1,16 +1,14 @@
 import streamlit as st
 
-st.title("Date acquisition")
+st.title("Date acquisition", anchor=False)
 
 st.write("All tools with the exception of the LogoRecognizer rely mainly on the database from ESPN. For a brief explanation of the images used for training the LogoRecognizer, please refer to its tab in the 'ML/AI models' section.")
 
-st.markdown("""
-## Data Source: ESPN
-The homepage of ESPN provides a wealth of historical sports data, especially for American football. Most of the data visible on their homepage is accessible through API calls. While using those calls is free for everyone, it is entirely undocumented. Therefore we had to rely on call urls collected by other users to perform our requests.
+st.header("Data Source: ESPN", anchor=False)
+st.write("The homepage of ESPN provides a wealth of historical sports data, especially for American football. Most of the data visible on their homepage is accessible through API calls. While using those calls is free for everyone, it is entirely undocumented. Therefore we had to rely on call urls collected by other users to perform our requests.")
 
-### Example API Calls
-Below are examples of API calls we used to gather specific data. Use the segmented control below to explore different API endpoints.
-""")
+st.subheader("Example API Calls", anchor=False)
+st.write("Below are examples of API calls we used to gather specific data. Use the segmented control below to explore different API endpoints.")
 
 
 # Example API Calls

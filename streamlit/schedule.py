@@ -6,6 +6,7 @@ import dill
 from datetime import datetime
 import pytz
 from tzlocal import get_localzone
+from client_timezone import client_timezone
 
 from sources.plots import plot_win_probabilities, plot_points
 from sources.sql import create_sql_engine, get_current_week, query_db, update_week, update_full_schedule
@@ -109,6 +110,7 @@ if choice == "All games":
         st.subheader("Odds")
     st.divider()
 
+    user_timezone = client_timezone()
     for game in games:
         query = query_plays(game['game_id'])
         if int(game['game_status'])>1:
@@ -120,7 +122,7 @@ if choice == "All games":
             st.subheader(teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
         with col3:
             game_date = pytz.utc.localize(game['date'])
-            game_date_local = game_date.astimezone(get_localzone())
+            game_date_local = game_date.astimezone(user_timezone).strftime("%Y-%m-%d %H:%M")
 
             if int(game['game_status'])==1:
                 st.subheader(game_date_local)

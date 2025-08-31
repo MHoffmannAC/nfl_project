@@ -163,7 +163,7 @@ def list_colleges():
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("Colleges")
+    st.title("Colleges", anchor=False)
 
     alphabet = list(string.ascii_uppercase)
     selected_letter = st.segmented_control("Filter by name (A-Z):", options=alphabet, default=None)
@@ -209,7 +209,7 @@ def list_positions():
     </style>
     """, unsafe_allow_html=True)
 
-    st.title("Positions")
+    st.title("Positions", anchor=False)
 
     positions = query_db(sql_engine, 
         "SELECT position_id, name, abbreviation FROM positions ORDER BY name ASC"
@@ -243,7 +243,7 @@ def list_players():
     """, unsafe_allow_html=True)
 
     # Query to get the position details
-    st.title("Players")
+    st.title("Players", anchor=False)
 
     alphabet = list(string.ascii_uppercase)
     selected_letter = st.segmented_control("Filter by last name (A-Z):", options=alphabet, default=None)
@@ -295,7 +295,7 @@ def position_page(position_id):
 
     # Query to get the position details
     position = query_db(sql_engine, "SELECT name FROM positions WHERE position_id = :position_id", position_id=position_id)[0]
-    st.title(position['name'])
+    st.title(position['name'], anchor=False)
 
     # Query to get players for this position
     players = query_db(sql_engine, 
@@ -354,7 +354,7 @@ def player_page(player_id):
     )[0]
 
     # Set the page title to the player's full name
-    st.title(player['full_name'])
+    st.title(player['full_name'], anchor=False)
     
     # Create two columns for the layout
     col1, col2 = st.columns(2)
@@ -433,7 +433,7 @@ def college_page(college_id):
     
     col1, col2 = st.columns(2)
     with col1:
-        st.title(college['name'])
+        st.title(college['name'], anchor=False)
         st.image(college['logo'], caption=college['mascot'])
     
     with col2:
@@ -528,7 +528,7 @@ if st.session_state["chosen_tab"] == "Teams":
         team_page(st.session_state["chosen_id"])
         if st.session_state.get("roles", False) == "admin":
             st.divider()
-            st.header("Admin settings")
+            st.header("Admin settings", anchor=False)
             if st.button("Update all rosters"):
                 with st.spinner("Updating rosters"):
                     get_players()

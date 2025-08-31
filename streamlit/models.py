@@ -151,11 +151,11 @@ with st.expander("ChatBot"):
                 
         st.markdown(""" - "Rule Book": the official rule set obtained from nfl.com for the current season.
                     
-                    - "Glossary": A collection of NFL related terms and their explanation from various places online.
+- "Glossary": A collection of NFL related terms and their explanation from various places online.
 
-                    - "News": All news published on ESPN.com during the last 7 days.
+- "News": All news published on ESPN.com during the last 7 days.
                                     
-                    The stored information is then used in a retrievel chain including a memory, i.e., the ChatBot will remember the previous messages and can include them in his further replies.
+The stored information is then used in a retrievel chain including a memory, i.e., the ChatBot will remember the previous messages and can include them in his further replies.
                                 """)
 
 with st.expander("NewsBots"):
