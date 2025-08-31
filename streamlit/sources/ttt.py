@@ -17,26 +17,27 @@ sql_engine = create_sql_engine()
 
 def display_user_settings():
     
-    teams = pd.DataFrame(query_db(sql_engine, "SELECT name, logo from teams WHERE team_id NOT IN (-2, -1, 31, 32, 38)"))
-    if st.session_state.get("username", None):
-        st.session_state["ttt-user"] = st.session_state["username"]
-    else:
-        ttt_username_input = st.text_input("Select your nickname")
-        if ttt_username_input:
-            if validate_username(ttt_username_input):
-                st.session_state["ttt-user"] = ttt_username_input
-            else:
-                st.warning("Please use a different name!")
-    
-    team_name = st.selectbox("Select your Team", options=teams['name'], index=None, placeholder="Select your favorite team")
-    if team_name:
-        team_logo = teams.loc[teams['name']==team_name, 'logo'].values[0]
-    if st.button("Join lobby"):
-        if st.session_state.get("ttt-user") and team_logo:
-            st.session_state["ttt-team"] = team_logo
-            st.rerun()
+    with st.form("ttt-settings-form"):
+        teams = pd.DataFrame(query_db(sql_engine, "SELECT name, logo from teams WHERE team_id NOT IN (-2, -1, 31, 32, 38)"))
+        if st.session_state.get("username", None):
+            st.session_state["ttt-user"] = st.session_state["username"]
         else:
-            st.error("Provide User Name and Logo")
+            ttt_username_input = st.text_input("Select your nickname")
+            if ttt_username_input:
+                if validate_username(ttt_username_input):
+                    st.session_state["ttt-user"] = ttt_username_input
+                else:
+                    st.warning("Please use a different name!")
+        
+        team_name = st.selectbox("Select your Team", options=teams['name'], index=None, placeholder="Select your favorite team")
+        if team_name:
+            team_logo = teams.loc[teams['name']==team_name, 'logo'].values[0]
+        if st.form_submit_button("Join lobby"):
+            if st.session_state.get("ttt-user") and team_logo:
+                st.session_state["ttt-team"] = team_logo
+                st.rerun()
+            else:
+                st.error("Provide User Name and Logo")
 
 def create_id() -> str:
     """Generates a unique game ID."""
