@@ -66,7 +66,8 @@ def login_page():
             - view and compare submitted logo drawings
             - delete logo drawings from database
             - update full season schedule
-            - update team rosters""")
+            - update team rosters
+            - delete open game rooms""")
 
 def update_page():
     

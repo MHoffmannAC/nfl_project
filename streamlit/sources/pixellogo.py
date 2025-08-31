@@ -116,7 +116,7 @@ def evaluate_guess(guess, target):
 
 def display_admin_panel():
     st.divider()
-    st.subheader("Admin settings")
+    st.subheader("Admin settings", anchor=False)
     if st.button("Reset leaderboard"):
         with no_rerun:
             server_state["pl_leaderboard"] = pd.DataFrame(columns=["Player Name", "Total score", "Total games", "Points per game"])
@@ -125,9 +125,10 @@ def display_admin_panel():
         server_state["pl_leaderboard"] = server_state["pl_leaderboard"][server_state["pl_leaderboard"]["Player Name"] != player_to_delete]
 
 def display_leaderboard():
-    st.title("Leaderboard")
-    st.dataframe(server_state["pl_leaderboard"].sort_values(by=["Total score", "Total games"], ascending=[False, True]),
-                     hide_index = True)
+    st.header("Leaderboard", anchor=False)
+    st.table(server_state["pl_leaderboard"].sort_values(by=["Total score", "Total games"], ascending=[False, True]).set_index('Player Name'),
+                     #hide_index = True
+                     )
     if st.session_state.get("roles", False) == "admin":
         display_admin_panel()
 
@@ -136,7 +137,7 @@ def display_game():
     team_name, team_img = server_state["pl_current_logo"]
     res = server_state["pl_available_stages"][server_state["pl_current_stage"]]
     if res <= 512:
-        st.header("Guess the logo")
+        st.header("Guess the logo", anchor=False)
         col1, col2 = st.columns([1,1])
         with col1:
             st.image(team_img.resize((res,res)).resize((512,512), resample=Image.NEAREST))
@@ -153,7 +154,7 @@ def display_game():
                         evaluate_guess(user_guess, team_name)
             elif st.session_state["pl_feedback"] == "":
                 st.session_state["pl_feedback"] = f"The team we were looking for was: {team_name}!"
-            st.header(st.session_state["pl_feedback"])
+            st.header(st.session_state["pl_feedback"], anchor=False)
     else:
         display_leaderboard()
 

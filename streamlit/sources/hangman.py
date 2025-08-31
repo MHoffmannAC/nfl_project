@@ -325,7 +325,7 @@ def settings_display():
     
     st.write("")
         
-    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_diff'])
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_diff'], anchor=False)
     difficulties = list(lang_dict[st.session_state["hangman"]["language"]]['difficulties'].keys())
     st.session_state["hangman"]["difficulty"] = st.radio(lang_dict[st.session_state["hangman"]['language']]['msg_avail_diff'],
                                               difficulties,
@@ -334,7 +334,7 @@ def settings_display():
     
     st.write("")
     
-    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_lang'])
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_lang'], anchor=False)
     languages = [lang_dict[language]['lang_full'] for language in lang_dict.keys()]
     language = st.radio(lang_dict[st.session_state["hangman"]['language']]['msg_avail_lang'],
                                               languages,
@@ -348,7 +348,7 @@ def settings_display():
     
     st.write("")
     
-    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_figs'])
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_avail_figs'], anchor=False)
     all_figures = list(figures.keys())
     chosen_figure = st.radio(lang_dict[st.session_state["hangman"]['language']]['msg_avail_figs'],
                                           all_figures,
@@ -360,7 +360,7 @@ def settings_display():
     
     st.write("")
     
-    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_set_hints'])
+    st.subheader(lang_dict[st.session_state["hangman"]['language']]['msg_set_hints'], anchor=False)
 
     hint_toggle = st.toggle(lang_dict[st.session_state["hangman"]['language']]['msg_toggle_hints'], value=st.session_state["hangman"]["allow_hints"])
     if hint_toggle != st.session_state["hangman"].get("allow_hints", None):
