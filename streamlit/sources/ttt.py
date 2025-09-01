@@ -192,7 +192,7 @@ def display_board(game: Dict):
                 st.button(
                         " ",
                         key=f"cell_{st.session_state.my_symbol}_player",
-                        use_container_width=True,
+                        width="stretch",
                         disabled=True
                             )
 
@@ -212,7 +212,7 @@ def display_board(game: Dict):
                     st.button(
                         " ",
                         key=f"cell_{current_turn}_current",
-                        use_container_width=True,
+                        width="stretch",
                         disabled=True
                             )
 
@@ -274,7 +274,7 @@ def display_board(game: Dict):
                             key=f"cell_{board[i][j] if board[i][j] else 'empty'}_{i}_{j}",
                             on_click=make_move,
                             args=(i, j),
-                            use_container_width=True,
+                            width="stretch",
                             disabled=button_disabled
                         )
         
