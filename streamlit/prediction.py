@@ -58,7 +58,7 @@ def display_buttons(position):
         st.rerun()
 
 # Main Page
-st.title("NFL Predictor")
+st.title("NFL Predictor", anchor=False)
 
 if ("game" in st.query_params) and (not st.query_params['game'] == "None"):
     selected_game = query_db(sql_engine, f"SELECT name FROM games WHERE game_id={st.query_params.game};")[0]['name']
@@ -80,13 +80,17 @@ if st.session_state["choice"] == "Live Game":
         update_week_cached(week, season, game_type, sql_engine)
         running_games = query_db(sql_engine, "SELECT * FROM games WHERE game_status=2;")
 
-    st.subheader("Live Game")
+    st.subheader("Live Game", anchor=False)
     game_mapping = {game['name']: game for game in running_games}
     game_mapping[None] = None
     if not "game_name_selected" in st.session_state:
         st.session_state["game_name_selected"] = None
     st.session_state["game_name_selected"] = st.selectbox("Games", options=[i['name'] for i in running_games], index=None if st.session_state["game_name_selected"]==None else [i['name'] for i in running_games].index(st.session_state["game_name_selected"]), placeholder="Please select a game")
     game_selected = game_mapping[st.session_state["game_name_selected"]]
+    if len(running_games) == 0:
+        st.error("There isn't any game running right now. Please check back when the next one begins.")
+        if st.button("Refresh"):
+            st.rerun()
     if game_selected:
         query = query_plays(game_selected['game_id'])
         plays = query_db(sql_engine, query)
@@ -333,7 +337,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
 
     col1, col2, = st.columns(2)
     with col1:
-        st.subheader("Play probabilities:")
+        st.subheader("Play probabilities:", anchor=False)
         plot_play_probabilities(nn_encoder.categories_[0], class_probabilities)
 
     with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
@@ -344,14 +348,14 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
             display_buttons("bottom")
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Win probabilities:")
+            st.subheader("Win probabilities:", anchor=False)
             win_probabilities = nn_regressor.predict(plays_df)
             plot_win_probabilities(plays_df['totalTimeLeft'], win_probabilities[:,0], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
         with col2:
-            st.subheader("Scores:")
+            st.subheader("Scores:", anchor=False)
             plot_points(plays_df['totalTimeLeft'], plays_df['homeScore'], plays_df['awayScore'], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
     else:
-        st.subheader("Win probabilities:")
+        st.subheader("Win probabilities:", anchor=False)
         probabilities = nn_regressor.predict(pd.DataFrame.from_dict(prediction_data, orient='index').T)
         #st.write(f"Home team win probability: {np.round(probabilities[0][0]*100)}%")
         #st.write(f"Away team win probability: {np.round(probabilities[0][1]*100)}%")
@@ -361,8 +365,6 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
         home_prob = probabilities[0][0] * 100
         away_prob = probabilities[0][1] * 100
         tie_prob = probabilities[0][2] * 100
-
-        st.subheader("Win probabilities:")
 
         def render_side(prob, color, left_text="", right_text="", show_text=True):
             if not show_text:
@@ -410,7 +412,7 @@ if st.session_state["choice"] == 'User Input (Tree)':
             clf = pickle.load(f)
             prune_duplicate_leaves(clf.named_steps['classifier'])
 
-    st.title('Interactive Decision Tree Classifier')
+    st.header('Interactive Decision Tree Classifier', anchor=False)
 
     if "current_node" not in st.session_state:
         st.session_state.current_node = 0  # Start at root
@@ -422,42 +424,44 @@ if st.session_state["choice"] == 'User Input (Tree)':
     class_probabilities = tree.value[current_node].flatten() / tree.value[current_node].sum()
     predicted_class = np.argmax(class_probabilities)
 
+    col1, col2 = st.columns(2, vertical_alignment="center")
+    with col1:
+        # Check if the current node is a leaf
+        if tree.children_left[current_node] == -1 and tree.children_right[current_node] == -1:
+            st.success(f"The most likely next play is a &nbsp;&nbsp;&nbsp; **{clf.classes_[predicted_class]}** &nbsp;&nbsp;&nbsp; with a probability of &nbsp;&nbsp;&nbsp; **{round(class_probabilities[predicted_class]*100)}%**")
 
-    # Check if the current node is a leaf
-    if tree.children_left[current_node] == -1 and tree.children_right[current_node] == -1:
-        st.success(f"The most likely next play is a &nbsp;&nbsp;&nbsp; **{clf.classes_[predicted_class]}** &nbsp;&nbsp;&nbsp; with a probability of &nbsp;&nbsp;&nbsp; **{round(class_probabilities[predicted_class]*100)}%**")
+            # Reset button
+            if st.button("Restart"):
+                st.session_state.current_node = 0
+                st.session_state.path = []
+                st.rerun()
 
-        # Reset button
-        if st.button("Restart"):
-            st.session_state.current_node = 0
-            st.session_state.path = []
-            st.rerun()
+        else:
+            # Current feature and threshold
+            feature = tree.feature[current_node]
+            threshold = tree.threshold[current_node]
+            feature_name = clf.named_steps['preprocessing'].get_feature_names_out()[feature].replace('num_pipe__', '').replace('cat_pipe__', '')
 
-    else:
-        # Current feature and threshold
-        feature = tree.feature[current_node]
-        threshold = tree.threshold[current_node]
-        feature_name = clf.named_steps['preprocessing'].get_feature_names_out()[feature].replace('num_pipe__', '').replace('cat_pipe__', '')
+            # Display the decision
+            st.markdown(f"Is&nbsp;&nbsp; <span class='custom-code'>{feature_name}</span> &nbsp; <= &nbsp; {threshold}?", unsafe_allow_html=True)
 
-        # Display the decision
-        st.markdown(f"Is&nbsp;&nbsp; <span class='custom-code'>{feature_name}</span> &nbsp; <= &nbsp; {threshold}?", unsafe_allow_html=True)
+            # Checkbox for each decision
+            if st.checkbox(f"Yes:&nbsp;  {feature_name}  <=&nbsp; {threshold}", key=f"left_{current_node}"):
+                next_node = tree.children_left[current_node]
+                st.session_state.path.append([feature_name, threshold, True, current_node])
+                st.session_state.current_node = next_node
+                st.rerun()
 
-        # Checkbox for each decision
-        if st.checkbox(f"Yes:&nbsp;  `{feature_name}`  <=&nbsp; {threshold}", key=f"left_{current_node}"):
-            next_node = tree.children_left[current_node]
-            st.session_state.path.append([feature_name, threshold, True, current_node])
-            st.session_state.current_node = next_node
-            st.rerun()
+            if st.checkbox(f"No:&nbsp;&nbsp;  {feature_name}  >&nbsp; {threshold}", key=f"right_{current_node}"):
+                next_node = tree.children_right[current_node]
+                st.session_state.path.append([feature_name, threshold, False, current_node])
+                st.session_state.current_node = next_node
+                st.rerun()
+                
+            #st.write(f"Current predicted class: {clf.classes_[predicted_class]}")
 
-        if st.checkbox(f"No:&nbsp;&nbsp;   `{feature_name}`  >&nbsp; {threshold}", key=f"right_{current_node}"):
-            next_node = tree.children_right[current_node]
-            st.session_state.path.append([feature_name, threshold, False, current_node])
-            st.session_state.current_node = next_node
-            st.rerun()
-            
-        #st.write(f"Current predicted class: {clf.classes_[predicted_class]}")
-
-    plot_play_probabilities(clf.classes_, class_probabilities)
+    with col2:
+        plot_play_probabilities(clf.classes_, class_probabilities)
 
 
     if "show_tree" not in st.session_state:
@@ -474,7 +478,7 @@ if st.session_state["choice"] == 'User Input (Tree)':
         st.session_state["show_tree"] = False
         st.write("Path through the tree:")        
         for step in st.session_state.path:
-            st.write(f"{step[0]}&nbsp;&nbsp;&nbsp;<=&nbsp;&nbsp;&nbsp;{step[1]}&nbsp;?&nbsp;&nbsp; {'True' if step[2] else 'False'}")
+            st.markdown(f"{step[0]}&nbsp;&nbsp;&nbsp;<=&nbsp;&nbsp;&nbsp;{step[1]}&nbsp;?&nbsp;&nbsp; {':green-badge[:material/check: True]' if step[2] else ':red-badge[:material/close_small: False]'}")
             
         
 

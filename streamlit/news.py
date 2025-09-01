@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 
 from langchain_groq import ChatGroq
 from langchain.chains import LLMChain
@@ -27,7 +28,7 @@ summary_chain = create_llm()
 news = query_db(sql_engine, "SELECT * FROM news WHERE published >= NOW() - INTERVAL 7 DAY ORDER BY published DESC;")
 
 
-st.title("News Page")
+st.title("News Page", anchor=False)
 
 st.write("Get a summary of the latest american football related news. Choose a news and a style.")
 headline_to_story = {i["headline"]: i["story"] for i in news}
@@ -46,7 +47,7 @@ if headline is not None:
                     "Normal person": "ai_normal", 
                     "Child": "ai_child"}[style]
         st.markdown("---")
-        st.subheader(headline)
+        st.subheader(headline, anchor=False)
         ai_from_sql = query_db(sql_engine, f"SELECT {sql_column} FROM news WHERE news_id = {news_id};")[0][sql_column]
         if ai_from_sql:
             styled_summary = ai_from_sql
@@ -54,10 +55,15 @@ if headline is not None:
             styled_summary = summary_chain.run({"text": story, "style": style})
             query_db(sql_engine, f"UPDATE news SET {sql_column} = :styled_summary WHERE news_id = :news_id;", styled_summary=styled_summary, news_id=news_id)
 
+        #def stream_summary(text):
+        #    for chunk in text.split(' '):
+        #        yield chunk + ' '
+        #        time.sleep(0.15)
+        #st.write_stream(stream_summary(styled_summary))
         st.write(styled_summary)
-
+    st.divider()
     if st.toggle("Display original news"):
-        st.write(headline)
+
         st.write(story)
 st.markdown("---")
 

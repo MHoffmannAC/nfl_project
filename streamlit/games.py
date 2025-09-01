@@ -22,7 +22,7 @@ elif game == "PixelLogos (Multiplayer)":
 elif game=="Tic-Tac-Toe (1 vs. 1)":
     ttt.run_game()
 else:
-    st.header("Please select a game from the choices above")
+    st.header("Please select a game from the choices above", anchor=False)
     st.write("""**Available games**:
  
  - **`Tic-Tac-Toe`**: Be the first to get three in a row (1 vs. 1)

@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit_nested_layout as stnl
 
-st.header("Tool descriptions")
+st.title("Tool descriptions", anchor=False)
 
 st.write("On this page you can find a brief summary of the chosen approaches for each tool on this app.")
 

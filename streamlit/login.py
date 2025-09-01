@@ -5,7 +5,7 @@ from time import sleep
 from sources.sql import create_sql_engine, text, query_db
 sql_engine = create_sql_engine()
 
-st.title("User login")
+st.title("User login", anchor=False)
 
 if not "authenticator" in st.session_state:
     
@@ -53,12 +53,12 @@ def login_page():
             st.rerun()
 
     st.divider()
-    st.subheader("""List of features for registered members:""")
+    st.subheader("List of features for registered members:", anchor=False)
     st.write("""
             - name is protected and cannot be used by others (chat, games)
             - automatic name in chat and games""")
     st.divider()
-    st.subheader("""List of features for admins:""")
+    st.subheader("List of features for admins:", anchor=False)
     st.write("""
             - delete chat messages 
             - delete leaderboard entries or reset leaderboard (PixelLogo)

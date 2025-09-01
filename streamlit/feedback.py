@@ -6,7 +6,7 @@ sql_engine = create_sql_engine()
 if not "last_submission" in st.session_state:
     st.session_state["last_submission"] = datetime.now()
 
-st.title("Feedback")
+st.title("Feedback", anchor=False)
 
 st.write("Thanks for checking out my NFL tools. Feel free to leave feedback or recommendations.")
 st.write("")
@@ -38,7 +38,7 @@ if st.button("Submit"):
             
 if st.session_state.get("roles", False) == "admin":
     st.divider()
-    st.subheader("Admin settings")
+    st.subheader("Admin settings", anchor=False)
     feedback_limits = query_db(sql_engine, "SELECT MIN(feedback_id) as 'min', MAX(feedback_id) as 'max' FROM feedbacks")
     cols = st.columns([1,1])
     with cols[0]:

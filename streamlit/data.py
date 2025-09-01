@@ -33,12 +33,10 @@ if selected_endpoint == None:
 else:
     st.code(api_calls[selected_endpoint], language="python")
 
-st.markdown("""
-## MySQL: Data Storage and Organization
-Once the data was collected, it was stored in a MySQL database. The tables were carefully connected using primary and foreign keys to maintain relational integrity. This approach allowed us to efficiently query and analyze the data.
+st.header("MySQL: Data Storage and Organization", anchor=False)
+st.text("""Once the data was collected, it was stored in a MySQL database. The tables were carefully connected using primary and foreign keys to maintain relational integrity. This approach allowed us to efficiently query and analyze the data.
 
-Below is a representation of the database schema we used:
-""")
+Below is a representation of the database schema we used:""")
 
 # Placeholder for the database schema image
 st.image("streamlit/images/sql.png", caption="Database Schema")

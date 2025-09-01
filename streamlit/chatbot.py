@@ -136,7 +136,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("NFLBot: Know Everything About the NFL")
+st.title("NFLBot: Know Everything About the NFL", anchor=False)
 
 if "selected_topic" not in st.session_state:
     st.session_state.selected_topic = False

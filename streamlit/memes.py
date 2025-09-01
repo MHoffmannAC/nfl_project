@@ -19,8 +19,8 @@ from urllib.parse import urlparse
 from sources.sql import create_sql_engine, text, query_db
 sql_engine = create_sql_engine()
 
-st.title("Memes from nflmemes_ig 'explained' by an AI")
-st.subheader("We let an AI 'explain' to us the latest memes from nflmemes_ig. Let's see whether artificial intelligence gets the jokes...")
+st.title("Memes from nflmemes_ig 'explained' by an AI", anchor=False)
+st.subheader("We let an AI 'explain' to us the latest memes from nflmemes_ig. Let's see whether artificial intelligence gets the jokes...", anchor=False)
 
 if not "memes" in server_state:
     with no_rerun:
@@ -57,7 +57,7 @@ def get_driver():
     return webdriver.Chrome(
         service=Service(
             ChromeDriverManager(
-                chrome_type=ChromeType.CHROMIUM
+#                chrome_type=ChromeType.CHROMIUM
                 ).install()
         ),
         options=options,
@@ -88,7 +88,6 @@ try:
         img = container.find("img")
         if img and img.get("src"):
             src = img["src"]
-            print(src)
             alt = img.get("alt", "")
             #if not normalize_url(src) in [normalize_url(i['src']) for i in server_state["memes"]]:
             if not src in [i['src'] for i in server_state["memes"]]:
@@ -104,6 +103,7 @@ try:
                     conn.commit()
                     
 except Exception as e:
+    print(e)
     driver = get_driver()
     driver.quit()
 

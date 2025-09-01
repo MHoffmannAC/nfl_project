@@ -14,7 +14,7 @@ from sqlalchemy import text
 from sources.sql import create_sql_engine, query_db
 sql_engine = create_sql_engine()
 
-st.header("LogoRecognizer")
+st.title("LogoRecognizer", anchor=False)
 
 @st.cache_resource
 def load_model():
@@ -104,7 +104,7 @@ with col3:
     if logo_upload is not None:
         image = Image.open(logo_upload)
         uploaded_image = np.expand_dims(preprocess_images([image])[0], axis=0)
-        st.image(uploaded_image, use_container_width=True)
+        st.image(uploaded_image, width="stretch")
         get_team_prediction(uploaded_image)
 
 st.divider()
@@ -155,8 +155,8 @@ def download_logos(min_id, max_id):
                     
 if st.session_state.get("roles", False) == "admin":
     st.divider()
-    st.header("Admin settings")
-    st.subheader("Display Logos from database")
+    st.header("Admin settings", anchor=False)
+    st.subheader("Display Logos from database", anchor=False)
     logos_limits = query_db(sql_engine, "SELECT MIN(logo_id) as 'min', MAX(logo_id) as 'max' FROM logos")
     selected_range = st.slider("Select Id range", min_value=logos_limits[0]['min'], max_value=logos_limits[0]['max'], value=(logos_limits[0]['min'],logos_limits[0]['max']))
     if not "download_logos" in st.session_state:
@@ -169,7 +169,7 @@ if st.session_state.get("roles", False) == "admin":
         teams_dict = {team["team_id"]: {"name": team["name"], "logo": team["logo"]}
                           for team in teams_db}
         for image in logos_db:
-            st.subheader(teams_dict[image["team_id"]]["name"])
+            st.subheader(teams_dict[image["team_id"]]["name"], anchor=False)
             cols = st.columns([1,1])
             with cols[0]:
                 array = np.fromstring(image["image"].replace('[', '').replace(']', ''), sep=' ').reshape(400, 400, 3)
