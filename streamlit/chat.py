@@ -3,12 +3,17 @@ from streamlit_server_state import server_state, server_state_lock, no_rerun
 import streamlit_antd_components as sac
 from streamlit_autorefresh import st_autorefresh
 
-from datetime import datetime
+from datetime import datetime, timezone
+import pytz
+from client_timezone import client_timezone
+
 from profanity_check import predict
 import pandas as pd
 
 from sources.sql import validate_username, create_sql_engine, query_db
 sql_engine = create_sql_engine()
+
+st.title("Chat Rooms", anchor=False)
 
 # Initialize "chat_rooms" in server_state if not already present
 if "chat_rooms" not in server_state:
@@ -133,7 +138,7 @@ with col1:
         st.session_state["selected_chat_room"] = "no_room"
     selected_nodes = sac.tree(
                             items=convert_nodes_to_sac_tree_items(nodes),
-                            label='## Chat rooms',
+                            label='#### Available chat rooms:',
                             icon='',
                             checkbox=False,
                             open_all=True,
@@ -187,7 +192,7 @@ if selected_room_value:
                 message_text = st.session_state.get(message_key, "").strip()
                 if message_text:
                     if predict([message_text]) == 0:
-                        timestamp = datetime.now()
+                        timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
                         query_db(sql_engine, "INSERT INTO chat (room_name, username, message_text, timestamp) VALUES (:room_name, :username, :message_text, :timestamp);",
                                  room_name=room_key,
                                  username=st.session_state["chat_username"],
@@ -209,10 +214,11 @@ if selected_room_value:
         #with server_state_lock[room_key]:
         msg_to_delete = None
         
+        user_timezone = client_timezone()
         for msg in server_state["chat_rooms"][room_key][::-1]:
             cols = st.columns([2,9,1], gap="medium")
             with cols[0]:
-                st.write(f"**{msg['chat_username']}**  \n  **[{msg['time'].strftime('%m/%d - %H:%M')}]**")
+                st.write(f"**{msg['chat_username']}**  \n  **[{pytz.utc.localize(msg['time']).astimezone(user_timezone).strftime('%m/%d - %H:%M')}]**")
             with cols[1]:
                 try:
                     st.image(msg['text'], width=250)

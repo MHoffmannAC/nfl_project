@@ -3,9 +3,7 @@ import pandas as pd
 import numpy as np
 import dill
 
-from datetime import datetime
 import pytz
-from tzlocal import get_localzone
 from client_timezone import client_timezone
 
 from sources.plots import plot_win_probabilities, plot_points
