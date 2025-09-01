@@ -57,7 +57,7 @@ def get_driver():
     return webdriver.Chrome(
         service=Service(
             ChromeDriverManager(
-#                chrome_type=ChromeType.CHROMIUM
+                chrome_type=ChromeType.CHROMIUM
                 ).install()
         ),
         options=options,
