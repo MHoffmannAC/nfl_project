@@ -29,20 +29,22 @@ def main():
     page = st.navigation({
         "General pages": [
             st.Page("streamlit/start.py", title="Home Page", icon=":material/home:", default=True),
-            st.Page("streamlit/schedule.py", title="Schedule", icon=":material/schedule:"),
+            st.Page("streamlit/schedule.py", title="Schedule", icon=":material/calendar_clock:"),
+            st.Page("streamlit/standings.py", title="Standings", icon=":material/social_leaderboard:"),
             st.Page("streamlit/details.py", title="Teams", icon=":material/groups:")
         ],
         "ML/AI Tools": [
             st.Page("streamlit/prediction.py", title="PlayAnalyzer", icon=":material/sports_football:"),
             st.Page("streamlit/chatbot.py", title="ChatBot", icon=":material/chat:"),
-            st.Page("streamlit/news.py", title="NewsBot", icon=":material/newspaper:"),
+            st.Page("streamlit/news.py", title="NewsBots", icon=":material/newspaper:"),
             st.Page("streamlit/drawing.py", title="LogoRecognizer", icon=":material/image_search:"),
             st.Page("streamlit/memes.py", title="MemeExplainer", icon=":material/school:"), 
         ],
         "Information": [
             st.Page("streamlit/data.py", title="Data Acquisition", icon=":material/storage:"),
             st.Page("streamlit/models.py", title="ML/AI models", icon=":material/dashboard:"),
-            st.Page("streamlit/wbs.py", title="WBS bootcamp", icon=":material/dashboard:")
+            st.Page("streamlit/streamlit.py", title="Streamlit functionalities", icon=":material/chess_queen:"),
+            st.Page("streamlit/wbs.py", title="WBS bootcamp", icon=":material/camping:")
         ],
         "More": [
             st.Page("streamlit/chat.py", title="Chat", icon=":material/forum:"),

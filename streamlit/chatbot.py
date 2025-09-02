@@ -16,7 +16,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 llm = ChatGroq(temperature=0,
                groq_api_key=st.secrets['GROQ_TOKEN'],
-               model_name="llama3-70b-8192")
+               model_name="llama-3.3-70b-versatile")
 
 # prompt
 #template = """You are a nice chatbot having a conversation with a human about the NFL.  Give only replies based on the provided extracted parts of long documents (the context). No need to mention explicitly something like "Based on the provided context". If you don't know the answer based on the provided context, just say "I don't know the answer.".
