@@ -91,5 +91,7 @@ elif news_bot == "Podcast":
 """
 
     st.markdown(iframe, unsafe_allow_html=True)
+    st.write("")
+    st.markdown("Due to library incompatibilities, the podcast is hosted on an external streamlit page. If the app does not load, please head over [here](https://nfl-ai-podcast.streamlit.app/) to wake it up.")
 else:
     st.error("Please select your desired NewsBot. Either get brief summaries in the style of your choice or listen to an AI generated podcast.")
