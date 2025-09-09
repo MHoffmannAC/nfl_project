@@ -479,12 +479,3 @@ if st.session_state["choice"] == 'User Input (Tree)':
         st.write("Path through the tree:")        
         for step in st.session_state.path:
             st.markdown(f"{step[0]}&nbsp;&nbsp;&nbsp;<=&nbsp;&nbsp;&nbsp;{step[1]}&nbsp;?&nbsp;&nbsp; {':green-badge[:material/check: True]' if step[2] else ':red-badge[:material/close_small: False]'}")
-            
-        
-
-
-
-
-
-
-            

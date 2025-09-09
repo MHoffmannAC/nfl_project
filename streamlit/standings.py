@@ -366,7 +366,7 @@ games_data, divisions_data, teams_data = load_data()
 if games_data is not None and divisions_data is not None and teams_data is not None and  not games_data.empty:
     full_standings_df = calculate_standings(games_data, divisions_data, teams_data)
     st.markdown("Select an option below to view either the conference or division standings.")
-    view_mode = st.radio("Select View Mode", ["Conference Standings", "Division Standings"])
+    view_mode = st.radio("Select View Mode", ["Division Standings", "Conference Standings"])
 
     if view_mode == "Conference Standings":
         st.header("Conference Standings", anchor=False)
