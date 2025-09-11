@@ -1,5 +1,5 @@
 import streamlit as st
-st.image("streamlit/images/header.png", width=1000)
+st.image("streamlit/images/new_header.png", width=1000)
 st.title("Welcome to the NFL Gameday Analysis App!", anchor=False)
 
 st.markdown("Use the sidebar or the list below to navigate to different sections of the app:")
@@ -38,7 +38,7 @@ st.subheader("Information:")
 st.page_link("streamlit/data.py", label="**DataAquisition**: Learn more about the underlying data and its origins.", icon=":material/storage:")
 st.page_link("streamlit/models.py", label="**ML/AI models**: Explanation of the different machine learning models and generative AIs.", icon=":material/dashboard:")
 st.page_link("streamlit/streamlit.py", label="**Streamlit functionalities**: Get an overview of in-built streamlit functionalities as well as external libraries used", icon=":material/chess_queen:")
-st.page_link("streamlit/wbs.py", label="**WBS bootcamp**: Brief explanation about the origins of this project.", icon=":material/camping:")
+st.page_link("streamlit/wbs.py", label="**Data Science bootcamp**: Brief explanation about the origins of this project.", icon=":material/camping:")
 
 st.divider()
 st.subheader("More:")

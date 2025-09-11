@@ -249,7 +249,7 @@ with st.expander("General Streamlit functionalities"):
         - `st.rerun()` is used after data refresh; `st.stop()` for early exits.  
 
         **Where they are used:**
-        - The <a href='news' target='_self'>News Summarizer</a> and <a href='prediction' target='_self'>PlayAnalyzer</a> pages both use `st.rerun()` to update the page after a user action.
+        - The <a href='news' target='_self'>News Summarizer</a> and <a href='prediction' target='_self'>PlayPredictor</a> pages both use `st.rerun()` to update the page after a user action.
         - Tic TacToe in the <a href='games' target='_self'>Games page</a> uses `st.fragment()` to reload only parts of the app regularly. 
 
         ##### Streamlit documentation:

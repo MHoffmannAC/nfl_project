@@ -44,7 +44,7 @@ def main():
             st.Page("streamlit/data.py", title="Data Acquisition", icon=":material/storage:"),
             st.Page("streamlit/models.py", title="ML/AI models", icon=":material/dashboard:"),
             st.Page("streamlit/streamlit.py", title="Streamlit functionalities", icon=":material/chess_queen:"),
-            st.Page("streamlit/wbs.py", title="WBS bootcamp", icon=":material/camping:")
+            st.Page("streamlit/wbs.py", title="Data Science bootcamp", icon=":material/camping:")
         ],
         "More": [
             st.Page("streamlit/chat.py", title="Chat", icon=":material/forum:"),
