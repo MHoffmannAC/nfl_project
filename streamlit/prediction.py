@@ -1,20 +1,96 @@
-import streamlit as st
+from datetime import datetime
+import dill 
 import numpy as np
 import pandas as pd
-
+import pickle 
+import random
 from sklearn.tree import export_graphviz, DecisionTreeClassifier
 from sklearn.tree._tree import TREE_LEAF
-
+import streamlit as st
 import tensorflow as tf
-
-import dill 
-import pickle 
-from datetime import datetime
 
 from sources.long_queries import query_plays
 from sources.plots import plot_play_probabilities, plot_points, plot_win_probabilities, display_tree, prune_duplicate_leaves
 from sources.sql import query_db, create_sql_engine, get_current_week, get_existing_ids, update_running_game, update_week
 sql_engine = create_sql_engine()
+
+def create_random_play_data(season, sql_engine):
+    teams = pd.DataFrame(query_db(sql_engine, "SELECT abbreviation, name FROM teams WHERE team_id NOT IN (-2, -1, 31, 32, 38);"))
+    home_team = teams.sample(1).iloc[0].to_dict()
+    away_team = teams.loc[teams['abbreviation']!=home_team['abbreviation']].sample(1).iloc[0].to_dict()
+    week = random.randint(1, 18)
+    quarter = random.randint(1, 4)
+    clock_seconds = random.randint(0, 900)
+    total_time_left = (4 - quarter) * 900 + clock_seconds
+
+    offense_at_home = random.choice([0, 1])
+
+    down = random.randint(1, 4)
+    distance = random.randint(1, 10)
+    yards_to_endzone = random.randint(1, 99)
+
+    # Score
+    home_score = random.randint(0, 35)
+    away_score = random.randint(0, 35)
+    score_diff = home_score - away_score
+
+    # Standings generation
+    home_wins = random.randint(0, 17)
+    home_losses = week - home_wins - random.randint(0, 1)
+    away_wins = random.randint(0, 17)
+    away_losses = week - away_wins - random.randint(0, 1)
+
+    home_home_wins = random.randint(0, home_wins) if home_wins > 0 else 0
+    home_road_wins = home_wins - home_home_wins
+    home_home_losses = random.randint(0, home_losses) if home_losses > 0 else 0
+    home_road_losses = home_losses - home_home_losses
+
+    away_home_wins = random.randint(0, away_wins) if away_wins > 0 else 0
+    away_road_wins = away_wins - away_home_wins
+    away_home_losses = random.randint(0, away_losses) if away_losses > 0 else 0
+    away_road_losses = away_losses - away_home_losses
+
+    standings = {
+        "standing_home_overall_win": home_wins,
+        "standing_home_home_win": home_home_wins,
+        "standing_home_road_win": home_road_wins,
+        "standing_home_overall_loss": home_losses,
+        "standing_home_home_loss": home_home_losses,
+        "standing_home_road_loss": home_road_losses,
+        "standing_away_overall_win": away_wins,
+        "standing_away_home_win": away_home_wins,
+        "standing_away_road_win": away_road_wins,
+        "standing_away_overall_loss": away_losses,
+        "standing_away_home_loss": away_home_losses,
+        "standing_away_road_loss": away_road_losses,
+    }
+
+    play_data = {
+        "quarter": quarter,
+        "clock_seconds": clock_seconds,
+        "offenseAtHome": offense_at_home,
+        "next_down": down,
+        "next_distance": distance,
+        "next_yardsToEndzone": yards_to_endzone,
+        "possessionChange": 0,
+        "season": season,
+        "game_type": "regular-season",
+        "week": week,
+        "homeScore": home_score,
+        "awayScore": away_score,
+        "scoreDiff": score_diff,
+        **standings,
+        "homeAbr": home_team["abbreviation"],
+        "awayAbr": away_team["abbreviation"],
+        "homeName": home_team["name"],
+        "awayName": away_team["name"],
+        "totalTimeLeft": total_time_left,
+        "completionRate": round(random.uniform(0.5, 0.75), 2),
+        "passToRushRatio": round(random.uniform(0.8, 1.5), 2),
+    }
+
+    st.session_state["play_data"] = play_data
+    st.rerun()
 
 st.markdown("""
     <style>
@@ -39,10 +115,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 week, season, game_type = get_current_week()
-
-def update_week_dummy(week, season, game_type, sql_engine):
-    #st.error("update_week is a DUMMY function, remember to change it!!")
-    pass
 
 @st.cache_resource(show_spinner=False)
 def update_week_cached(week, season, game_type, _sql_engine):
@@ -112,16 +184,11 @@ elif st.session_state["choice"] == "User Input (Full)":
     if "play_data" in st.session_state:
         play_data = st.session_state["play_data"]
     else:
-        play_data = {'quarter': 1, 'clock_seconds': 900, 'offenseAtHome': 1, 'possessionChange': 0, 'down': 1, 'next_down': 1, 'distance': 10, 'next_distance': 10, 'yardsToEndzone': 70, 'next_yardsToEndzone': 70, 'season': 2024, 'game_type': 'regular-season', 'week': 1, 'homeScore': 0, 'awayScore': 0, 'scoreDiff': 0, 'standing_home_overall_win': 0, 'standing_home_home_win': 0, 'standing_home_road_win': 0, 'standing_home_overall_loss': 0, 'standing_home_home_loss': 0, 'standing_home_road_loss': 0, 'standing_away_overall_win': 0, 'standing_away_home_win': 0, 'standing_away_road_win': 0, 'standing_away_overall_loss': 0, 'standing_away_home_loss': 0, 'standing_away_road_loss': 0, 'homeAbr': 'ATL', 'awayAbr': 'BUF', 'homeName': 'Atlanta Falcons', 'awayName': 'Buffalo Bills', 'totalTimeLeft': 3600, 'completionRate': 0.7, 'passToRushRatio': 1}
+        play_data = {'quarter': 1, 'clock_seconds': 900, 'offenseAtHome': 1, 'possessionChange': 0, 'down': 1, 'next_down': 1, 'distance': 10, 'next_distance': 10, 'yardsToEndzone': 70, 'next_yardsToEndzone': 70, 'season': season, 'game_type': 'regular-season', 'week': week, 'homeScore': 0, 'awayScore': 0, 'scoreDiff': 0, 'standing_home_overall_win': 0, 'standing_home_home_win': 0, 'standing_home_road_win': 0, 'standing_home_overall_loss': 0, 'standing_home_home_loss': 0, 'standing_home_road_loss': 0, 'standing_away_overall_win': 0, 'standing_away_home_win': 0, 'standing_away_road_win': 0, 'standing_away_overall_loss': 0, 'standing_away_home_loss': 0, 'standing_away_road_loss': 0, 'homeAbr': 'ATL', 'awayAbr': 'BUF', 'homeName': 'Atlanta Falcons', 'awayName': 'Buffalo Bills', 'totalTimeLeft': 3600, 'completionRate': 0.7, 'passToRushRatio': 1}
 
 if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["choice"] == "Live Game") and (play_data['next_down']>0)):
 
-    # Initialize session state with default values
-
-
 # Reset to default function
-
-
     clock_seconds = play_data['clock_seconds']
     minutes = clock_seconds // 60
     seconds = clock_seconds % 60
@@ -133,7 +200,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
     with col1:
         game_type = st.radio("Game Type", ["Regular", "Postseason"], index=0 if play_data['game_type'] == 'regular-season' else 1, disabled=(st.session_state["choice"] == "Live Game"))
     with col2:
-        season = st.selectbox("Season", options=range(2009,2025), index=list(range(2009,2025)).index(2024), disabled=(st.session_state["choice"] == "Live Game"))
+        season = st.selectbox("Season", options=range(2009,play_data['season']+1), index=list(range(2009,play_data['season']+1)).index(play_data['season']), disabled=(st.session_state["choice"] == "Live Game"))
         week_options = list(range(1, 19)) if game_type == "Regular" else ["SuperBowl", "ConfChamp", "DivRound", "WildCard"]
         try:
             week = st.selectbox("Week", options=week_options, index=week_options.index(play_data['week'] if isinstance(play_data['week'], int) else play_data['week']), disabled=(st.session_state["choice"] == "Live Game"))
@@ -335,7 +402,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
     except:
         st.rerun()
 
-    col1, col2, = st.columns(2)
+    col1, col2, = st.columns(2, vertical_alignment="top", gap="large")
     with col1:
         st.subheader("Play probabilities:", anchor=False)
         plot_play_probabilities(nn_encoder.categories_[0], class_probabilities)
@@ -355,6 +422,9 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
             st.subheader("Scores:", anchor=False)
             plot_points(plays_df['totalTimeLeft'], plays_df['homeScore'], plays_df['awayScore'], plays_df['homeColor'].values[0], plays_df['awayColor'].values[0], plays_df['homeName'].values[0], plays_df['awayName'].values[0])
     else:
+        with col2:
+            if st.button("Create Random Situation"):
+                create_random_play_data(season, sql_engine)
         st.subheader("Win probabilities:", anchor=False)
         probabilities = nn_regressor.predict(pd.DataFrame.from_dict(prediction_data, orient='index').T)
         #st.write(f"Home team win probability: {np.round(probabilities[0][0]*100)}%")
@@ -398,7 +468,7 @@ if (st.session_state["choice"] == "User Input (Full)") or ((st.session_state["ch
             show_text=away_prob > 10
         )
 
-        bar_html = f'<div style="display:flex; height:40px; width:50%; border-radius:8px; overflow:hidden; border:1px solid #ccc;">{home_html}{away_html}</div>'
+        bar_html = f'<div style="display:flex; height:40px; width:50%; border-radius:8px; overflow:hidden; border:1px solid #ccc; gap:1px; background-color:white;">{home_html}{away_html}</div>'
 
         st.markdown(bar_html, unsafe_allow_html=True)
 

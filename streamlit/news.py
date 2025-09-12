@@ -74,13 +74,6 @@ if news_bot == "NewsSummarizer":
         if st.toggle("Display original news"):
 
             st.write(story)
-    st.markdown("---")
-
-    if st.button("Update News"):
-        with st.spinner(text="Loading latest news..."):
-            get_news(sql_engine)
-        st.write("News updated.")
-        st.rerun()
         
 elif news_bot == "Podcast":
     iframe = """
@@ -95,3 +88,11 @@ elif news_bot == "Podcast":
     st.markdown("Due to library incompatibilities, the podcast is hosted on an external streamlit page. If the app does not load, please head over [here](https://nfl-ai-podcast.streamlit.app/) to wake it up.")
 else:
     st.error("Please select your desired NewsBot. Either get brief summaries in the style of your choice or listen to an AI generated podcast.")
+    
+st.divider()
+
+if st.button("Update News"):
+    with st.spinner(text="Loading latest news..."):
+        get_news(sql_engine)
+    st.toast("News updated.")
+    st.rerun()

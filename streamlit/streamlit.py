@@ -3,7 +3,7 @@ import streamlit_nested_layout as stnl
 
 st.title("Overview of Streamlit functionalities", anchor=False)
 
-with st.expander("General Streamlit functionalities"):
+with st.expander("General Streamlit functionalities", expanded=True):
     
     with st.expander("Basic text: `st.write()` and `st.markdown()`"):
         st.markdown("""
