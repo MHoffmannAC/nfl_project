@@ -199,12 +199,25 @@ else:
     game_summaries = [get_game_summary(games_df.loc[games_df['game_id'] == gid].reset_index(drop=True)) for gid in games]
     summary_df = pd.DataFrame(game_summaries)
 
+    # upsets
+    summary_df = summary_df.assign(
+        underdog_wp = np.where(
+            summary_df['initial_home_wp'] < 0.5,
+            summary_df['initial_home_wp'],
+            1 - summary_df['initial_home_wp']
+        ),
+        underdog_team = np.where(
+            summary_df['initial_home_wp'] < 0.5,
+            summary_df['home_team'],
+            summary_df['away_team']
+        )
+    )
+    upsets = summary_df[summary_df['winner'] == summary_df['underdog_team']]
+
     # Category winners
     winners = {
         "Biggest Blowout": summary_df.sort_values('score_diff', ascending=False).iloc[0],
-        "Biggest Upset": summary_df.assign(
-            underdog_wp=lambda x: np.where(x['initial_home_wp'] < 0.5, x['initial_home_wp'], 1 - x['initial_home_wp'])
-        ).sort_values('underdog_wp').iloc[0],
+        "Biggest Upset": upsets.sort_values('underdog_wp').iloc[0] if not upsets.empty else None,
         "Biggest Domination": summary_df.sort_values('winner_wp_avg', ascending=False).iloc[0],
         "Biggest Comeback": summary_df.sort_values('winner_wp_min').iloc[0],
         "Most Volatile Game": summary_df.sort_values('volatility', ascending=False).iloc[0],
@@ -214,6 +227,11 @@ else:
 
     # Display Results
     for category, row in winners.items():
+        if row is None:
+            st.subheader(f"\n🏅 {category}")
+            st.write("   → No upset games this week")
+            st.divider()
+            continue
         st.subheader(f"\n🏅 {category}")
         st.write(f"   → Game: {row['home_team']} vs {row['away_team']}")
         st.write(f"   → Winner: {row['winner']} | Final Score: {row['home_score']} - {row['away_score']}")
