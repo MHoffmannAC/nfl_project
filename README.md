@@ -1,7 +1,10 @@
-# NFL-Tools: Final Project during WBS Data Science Bootcamp
+# NFL-Gameday-Analyzer: get insights into the NFL
 
-Work in progress...
+This app is a big playground combining
+- Data Science
+- NFL
+- Streamlit
 
-Check out the current status of the [Streamlit app](https://nfl-tools.streamlit.app/)!
+Check out the current status of the [Streamlit app](https://nfl-gameday.streamlit.app/)!
 
 ![Current status of Streamlit app](streamlit/images/streamlit.png)
