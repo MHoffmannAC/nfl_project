@@ -9,6 +9,7 @@ from client_timezone import client_timezone
 from sources.plots import plot_win_probabilities, plot_points
 from sources.sql import create_sql_engine, get_current_week, query_db, update_week, update_full_schedule
 from sources.long_queries import query_plays, query_week
+from sources.socialmedia import generate_social_media_posts
 
 sql_engine = create_sql_engine()
 
@@ -186,12 +187,13 @@ else:
             'winner': winner,
             'loser': loser,
             'score_diff': abs(home_score - away_score),
+            'total_score': home_score + away_score,
             'initial_home_wp': initial_home_wp,
             'winner_wp_avg': avg_home_wp if winner == home_team else 1 - avg_home_wp,
             'winner_wp_min': min_home_wp if winner == home_team else 1 - max_home_wp,
             'volatility': df_game['home_wp'].std(),
             'lead_changes': lead_changes,
-            'late_flip_time': late_flip_time
+            'late_flip_time': late_flip_time,
         }
 
     # Process all games
@@ -217,12 +219,15 @@ else:
     # Category winners
     winners = {
         "Biggest Blowout": summary_df.sort_values('score_diff', ascending=False).iloc[0],
-        "Biggest Upset": upsets.sort_values('underdog_wp').iloc[0] if not upsets.empty else None,
+        "Closest Game": summary_df.sort_values('score_diff').iloc[0],
+        "Highest Scoring Game": summary_df.sort_values('total_score', ascending=False).iloc[0],
+        "Lowest Scoring Game": summary_df.sort_values('total_score').iloc[0],
         "Biggest Domination": summary_df.sort_values('winner_wp_avg', ascending=False).iloc[0],
+        "Biggest Upset": upsets.sort_values('underdog_wp').iloc[0] if not upsets.empty else None,
         "Biggest Comeback": summary_df.sort_values('winner_wp_min').iloc[0],
+        "Latest Comeback": summary_df[summary_df['late_flip_time'].notna()].sort_values('late_flip_time', ascending=True).iloc[0],
         "Most Volatile Game": summary_df.sort_values('volatility', ascending=False).iloc[0],
         "Most Lead Changes": summary_df.sort_values('lead_changes', ascending=False).iloc[0],
-        "Latest Game-Winning Turnaround": summary_df[summary_df['late_flip_time'].notna()].sort_values('late_flip_time', ascending=True).iloc[0]
     }
 
     # Display Results
@@ -256,3 +261,7 @@ else:
                 row['away_team']
             )
         st.divider()
+
+    if st.session_state.get("roles", False) == "admin":
+        if st.button("Generate Social Media Posts"):
+            generate_social_media_posts(winners, season, week, games_df, teams)

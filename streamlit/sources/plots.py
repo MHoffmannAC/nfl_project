@@ -11,7 +11,7 @@ from io import BytesIO
 import re
 
 def plot_play_probabilities(classes, probabilities):
-    fig, ax = plt.subplots(figsize=(3, 1.5))
+    fig, ax = plt.subplots(figsize=(3, 1.5), dpi=400)
     fig.patch.set_facecolor("#00093a")
     ax.set_facecolor("#00093a")
     sorted_classes = classes[probabilities.argsort()]
@@ -40,9 +40,9 @@ def plot_play_probabilities(classes, probabilities):
         spine.set_edgecolor("white")
     st.pyplot(fig, width="content")
 
-def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeName, awayName):
+def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeName, awayName, show=True, ticks=False):
     ot = timeLeft.iloc[-1]<0
-    fig, ax = plt.subplots(figsize=(3, 2))    
+    fig, ax = plt.subplots(figsize=(3, 2), dpi=400)    
     fig.patch.set_facecolor("#00093a")
     ax.set_facecolor("white")
     ax.plot(timeLeft / 60, probabilities*100, color="#00093a", linewidth=1)
@@ -56,7 +56,6 @@ def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeNa
 
     ax.set_ylabel("Win Probability", fontsize=10, color="white")
     ax.tick_params(axis='x', colors='#00093a')
-    ax.tick_params(axis='y', colors='#00093a', which='both', left=False, right=False, labelleft=False)
     ax.set_ylim(0, 100)
 
     if ot:
@@ -76,12 +75,25 @@ def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeNa
     for spine in ax.spines.values():
         spine.set_edgecolor("#00093a")
     plt.tight_layout()
-    st.pyplot(fig, width="content")
+    if show:
+        st.pyplot(fig, width="content")
+    
+    if ticks:
+        ax.set_yticks([0,50,100])
+        ax.set_yticklabels(["100%", "50%", "100%"], fontsize=6, color="white", rotation=45)
+        ax.tick_params(axis='y', colors="#ffffff", which='both', left=False, right=True, labelleft=False, labelright=True)
+        for label in ax.get_yticklabels():
+            label.set_verticalalignment('center')
+            label.set_x(label.get_position()[0] - 0.02)
+    else:
+        ax.tick_params(axis='y', colors='#00093a', which='both', left=False, right=False, labelleft=False)
+
+    return fig
 
 
-def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, awayName):
+def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, awayName, show=True, right=True):
     ot = timeLeft.iloc[-1]<0
-    fig, ax = plt.subplots(figsize=(3, 2))    
+    fig, ax = plt.subplots(figsize=(3, 2), dpi=400)    
     fig.patch.set_facecolor("#00093a")
     ax.set_facecolor("white")
 
@@ -101,11 +113,18 @@ def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, 
     for time in range(0, 3600, 900):  # 900 seconds = 15 minutes
         ax.axvline(time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7)
 
-    ax.set_ylabel("Points", fontsize=10, color="white", rotation=270, labelpad=15, loc='center')
     ax.tick_params(axis='x', colors='#00093a')
     ax.tick_params(axis='y', colors='white')
     #ax.set_ylim(0, 100)
-    ax.yaxis.set_label_position("right")
+    if right:
+        ax.yaxis.set_label_position("right")
+        rotation = 270
+        labelpad = 15
+    else:
+        rotation = 90
+        labelpad = 4
+        
+    ax.set_ylabel("Points", fontsize=10, color="white", rotation=rotation, labelpad=labelpad, loc='center')
     ax.yaxis.tick_right()
 
     if ot:
@@ -125,8 +144,11 @@ def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, 
     for spine in ax.spines.values():
         spine.set_edgecolor("#00093a")
     plt.tight_layout()
-    st.pyplot(fig, width="content")
     
+    if show:
+        st.pyplot(fig, width="content")
+    
+    return fig
 
 def prune_duplicate_leaves(mdl):
     def is_leaf(inner_tree, index):
