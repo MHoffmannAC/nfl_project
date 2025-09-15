@@ -19,8 +19,8 @@ st.divider()
 st.subheader("General Pages:")
 
 st.page_link("streamlit/start.py", label="**Home Page**: Come back to this page.", icon=":material/home:")
-st.page_link("streamlit/schedule.py", label="**Schedule**: Check the Schedule of the NFL.", icon=":material/calendar_clock:")
-st.page_link("streamlit/standings.py", label="**Standings**: Check out the latest division and conference standings", icon=":material/social_leaderboard:")
+st.page_link("streamlit/schedule.py", label="**Game Schedule**: Check the Schedule of the NFL.", icon=":material/calendar_clock:")
+st.page_link("streamlit/standings.py", label="**League Standings**: Check out the latest division and conference standings", icon=":material/social_leaderboard:")
 st.page_link("streamlit/details.py", label="**Teams**: Analyze teams and their rosters.", icon=":material/groups:")
 
 st.divider()

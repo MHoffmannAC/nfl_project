@@ -29,8 +29,8 @@ def main():
     page = st.navigation({
         "General pages": [
             st.Page("streamlit/start.py", title="Home Page", icon=":material/home:", default=True),
-            st.Page("streamlit/schedule.py", title="Schedule", icon=":material/calendar_clock:"),
-            st.Page("streamlit/standings.py", title="Standings", icon=":material/social_leaderboard:"),
+            st.Page("streamlit/schedule.py", title="Game Schedule", icon=":material/calendar_clock:"),
+            st.Page("streamlit/standings.py", title="League Standings", icon=":material/social_leaderboard:"),
             st.Page("streamlit/details.py", title="Teams", icon=":material/groups:")
         ],
         "ML/AI Tools": [
