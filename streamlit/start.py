@@ -1,6 +1,6 @@
 import streamlit as st
 st.image("streamlit/images/new_header.png", width=1000)
-st.title("Welcome to the NFL Gameday Analysis App!", anchor=False)
+st.header("Welcome to the NFL Gameday Analysis App!", anchor=False)
 
 st.markdown("Use the sidebar or the list below to navigate to different sections of the app:")
 

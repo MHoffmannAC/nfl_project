@@ -447,10 +447,8 @@ def get_current_week():
 def update_game(game_id, game_df, sql_engine):
     set_clause = ", ".join([f"{col} = :{col}" for col in game_df.index])
     query = text(f"UPDATE games SET {set_clause} WHERE game_id = :game_id")
-
     params = game_df.to_dict()
     params["game_id"] = game_id
-
     with sql_engine.connect() as sql_connection:
         sql_connection.execute(query, params)
         sql_connection.commit()
@@ -504,13 +502,21 @@ def update_full_schedule(season, sql_engine):
     for week in [1,2,3,5]:
         update_week(week, season, "post-season", sql_engine)
 
-def update_running_game(game_id, sql_engine):
+def update_running_game(game_id, sql_engine, update_status=False):
     plays_df, _ = get_plays([game_id], sql_engine)
     if(len(plays_df)>0):
         append_new_rows(plays_df, 'plays', sql_engine, 'play_id')
         percentages_df = get_probabilities([game_id], sql_engine)
         if(len(percentages_df)>0):
             append_new_probabilities(percentages_df, 'probabilities', sql_engine, 'proba_id')
+    if(update_status):
+        game_info = query_db(sql_engine, f"SELECT season, week, game_type FROM games WHERE game_id={game_id};")[0]
+        url = f'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={game_info["season"]}&seasontype={2 if game_info["game_type"] == "regular-season" else 3}&week={game_info["week"]}'
+        response = requests.get(url)
+        data = response.json()
+        games_df = load_game_data(data['events'], sql_engine, asDataFrame=True, checkExistence=False)
+        if(len(games_df)>0)and(game_id in games_df.index):
+            update_game(game_id, games_df.loc[game_id, :], sql_engine)
 
 def get_news(sql_engine):
     urls = ["https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=150",

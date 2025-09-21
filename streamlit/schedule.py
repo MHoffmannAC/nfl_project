@@ -7,7 +7,7 @@ import pytz
 from client_timezone import client_timezone
 
 from sources.plots import plot_win_probabilities, plot_points
-from sources.sql import create_sql_engine, get_current_week, query_db, update_week, update_full_schedule
+from sources.sql import create_sql_engine, get_current_week, query_db, update_week, update_full_schedule, update_running_game
 from sources.long_queries import query_plays, query_week
 from sources.socialmedia import generate_social_media_posts
 
@@ -15,12 +15,88 @@ sql_engine = create_sql_engine()
 
 current_week, current_season, current_game_type = get_current_week()
 
+st.markdown("""
+    <style>
+        /* Match outer container classes like 'st-key-reload-...' */
+        div[class*="st-key-reload"] button {
+            border: none !important;
+            padding: 4px 0 2px 0 !important;  /* Top padding adjusted */
+            background: transparent !important;
+            color: inherit !important;
+            cursor: pointer;
+            line-height: 1.4 !important; /* Adjust line height */
+        }
+
+        div[class*="st-key-reload"] button:hover {
+            background-color: transparent !important;
+            color: inherit !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+@st.fragment
+def display_game(game_id):
+    game = query_db(sql_engine, f"SELECT * FROM games WHERE game_id={game_id};")[0]
+    col1, col2, col0, col3, col4, col5 = st.columns([1,1,0.1,0.5,0.5,0.5])
+    with col0:
+        if st.session_state["update_schedule"]:
+            with st.spinner(""):
+                update_running_game(game['game_id'], sql_engine, update_status=True)
+                game = query_db(sql_engine, f"SELECT * FROM games WHERE game_id={game_id};")[0]
+        game = query_db(sql_engine, f"SELECT * FROM games WHERE game_id={game_id};")[0]
+        if not int(game['game_status']) in [1,3]:
+            if st.button("🗘", key=f"reload-{game['game_id']}"):
+                with st.spinner(""):
+                    update_running_game(game['game_id'], sql_engine, update_status=True)
+                    game = query_db(sql_engine, f"SELECT * FROM games WHERE game_id={game_id};")[0]
+    with col1:
+        st.subheader(teams.loc[teams['team_id']==game['home_team_id']]['name'].values[0])
+    with col2:
+        st.subheader(teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
+    with col3:
+        game_date = pytz.utc.localize(game['date'])
+        game_date_local = game_date.astimezone(user_timezone).strftime("%Y-%m-%d %H:%M")
+        if int(game['game_status'])>1:
+            query = query_plays(game['game_id'])
+            plays = pd.DataFrame(query_db(sql_engine, query))
+        if int(game['game_status'])==1:
+            st.subheader(game_date_local)
+        elif int(game['game_status'])==2:
+            quarter = {1: "1st Qtr", 2: "2nd Qtr", 3: "3rd Qtr", 4: "4th Qtr", 5: "OT"}
+            st.subheader(quarter[plays.iloc[-1]['quarter']])
+        elif int(game['game_status'])==3:
+            st.subheader("Final")
+        else:
+            st.subheader("-")
+
+    with col4:
+        if int(game['game_status'])>1:
+            if int(game['game_status'])==2:
+                score = "("+str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])+")"
+                st.markdown(
+                    f"""<b><a href="/prediction?game={game['game_id']}" style="font-size: 1.6em; color: inherit;" target="_self">{score}</a></b>""",
+                    unsafe_allow_html=True,
+                )
+
+            else:
+                score = str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])
+                st.subheader(score)
+    with col5:
+        if int(game['game_status'])>1:
+            probabilities = nn_regressor.predict(plays)[:,0]
+            plot_win_probabilities(plays['totalTimeLeft'], probabilities, teams.loc[teams['team_id']==game['home_team_id']]['color'].values[0], teams.loc[teams['team_id']==game['away_team_id']]['color'].values[0], teams.loc[teams['team_id']==game['home_team_id']]['name'].values[0], teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
+        else:
+            st.write("")
+
 @st.cache_resource(show_spinner=False)
 def update_week_cached(week, season, game_type, _sql_engine):
     update_week(week, season, game_type, sql_engine)
 
-with st.spinner("Updating Schedule..."):
-    update_week_cached(current_week, current_season, current_game_type, sql_engine)
+if "update_schedule" not in st.session_state:
+    st.session_state["update_schedule"] = False
+
+#with st.spinner("Updating Schedule..."):
+#    update_week_cached(current_week, current_season, current_game_type, sql_engine)
     
 if "game_type" not in st.session_state:
     if current_game_type == "preseason":
@@ -77,9 +153,9 @@ with col1:
     if (type(week)==str):
         week = week_mapping[week]
 with col3:
-    if st.button("Update standings"):
-        with st.spinner("Updating Schedule..."):
-            update_week(week, season, game_type, sql_engine)
+    if st.button("Update all standings"):
+        st.session_state["update_schedule"] = True
+        st.rerun()
 
 games = query_db(sql_engine, f"SELECT * FROM games WHERE season={season} AND week={week} AND game_type='{game_type}' ORDER BY date;")
 teams = pd.DataFrame(query_db(sql_engine, f"SELECT * FROM teams;"))
@@ -96,7 +172,7 @@ with open('streamlit/sources/nn_regressor.pkl', 'rb') as f:
     nn_regressor = dill.load(f)
 
 if choice == "All games":
-    col1, col2, col3, col4, col5 = st.columns([1,1,0.5,0.5, 0.5])
+    col1, col2, col0, col3, col4, col5 = st.columns([1,1,0.1,0.5,0.5,0.5])
     with col1:
         st.subheader("Home team")
     with col2:
@@ -110,44 +186,9 @@ if choice == "All games":
     st.divider()
 
     user_timezone = client_timezone()
-    for game in games:
-        query = query_plays(game['game_id'])
-        if int(game['game_status'])>1:
-            plays = pd.DataFrame(query_db(sql_engine, query))
-        col1, col2, col3, col4, col5 = st.columns([1,1,0.5,0.5, 0.5])
-        with col1:
-            st.subheader(teams.loc[teams['team_id']==game['home_team_id']]['name'].values[0])
-        with col2:
-            st.subheader(teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
-        with col3:
-            game_date = pytz.utc.localize(game['date'])
-            game_date_local = game_date.astimezone(user_timezone).strftime("%Y-%m-%d %H:%M")
-
-            if int(game['game_status'])==1:
-                st.subheader(game_date_local)
-            elif int(game['game_status'])==2:
-                quarter = {1: "1st Qtr", 2: "2nd Qtr", 3: "3rd Qtr", 4: "4th Qtr", 5: "OT"}
-                st.subheader(quarter[plays.iloc[-1]['quarter']])
-            else:
-                st.subheader("Final")
-
-        with col4:
-            if int(game['game_status'])>1:
-                if int(game['game_status'])==2:
-                    score = "("+str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])+")"
-                    st.markdown(
-                        f"""<b><a href="/prediction?game={game['game_id']}" style="font-size: 1.6em; color: inherit;" target="_self">{score}</a></b>""",
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    score = str(plays.iloc[-1]['homeScore'])+":"+str(plays.iloc[-1]['awayScore'])
-                    st.subheader(score)
-        with col5:
-            if int(game['game_status'])>1:
-                probabilities = nn_regressor.predict(plays)[:,0]
-                plot_win_probabilities(plays['totalTimeLeft'], probabilities, teams.loc[teams['team_id']==game['home_team_id']]['color'].values[0], teams.loc[teams['team_id']==game['away_team_id']]['color'].values[0], teams.loc[teams['team_id']==game['home_team_id']]['name'].values[0], teams.loc[teams['team_id']==game['away_team_id']]['name'].values[0])
-            else:
-                st.write("")
+    game_ids = [game['game_id'] for game in games]
+    for game_id in game_ids:
+        display_game(game_id)
 else:
     query = query_week(week, season, game_type)
     games_df = pd.DataFrame(query_db(sql_engine, query))
@@ -265,3 +306,5 @@ else:
     if st.session_state.get("roles", False) == "admin":
         if st.button("Generate Social Media Posts"):
             generate_social_media_posts(winners, season, week, games_df, teams)
+            
+st.session_state["update_schedule"] = False
