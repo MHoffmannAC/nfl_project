@@ -9,7 +9,7 @@ from client_timezone import client_timezone
 from sources.plots import plot_win_probabilities, plot_points
 from sources.sql import create_sql_engine, get_current_week, query_db, update_week, update_full_schedule, update_running_game
 from sources.long_queries import query_plays, query_week
-from sources.socialmedia import generate_social_media_posts
+from sources.socialmedia import generate_game_stats_posts, generate_top_games_posts
 
 sql_engine = create_sql_engine()
 
@@ -189,6 +189,10 @@ if choice == "All games":
     game_ids = [game['game_id'] for game in games]
     for game_id in game_ids:
         display_game(game_id)
+        
+    if st.session_state.get("roles", False) == "admin":
+        if True: # st.button("Generate Social Media Posts"):
+            generate_game_stats_posts(season, week, games, teams)
 else:
     query = query_week(week, season, game_type)
     games_df = pd.DataFrame(query_db(sql_engine, query))
@@ -304,7 +308,7 @@ else:
         st.divider()
 
     if st.session_state.get("roles", False) == "admin":
-        if st.button("Generate Social Media Posts"):
-            generate_social_media_posts(winners, season, week, games_df, teams)
+        if True: # st.button("Generate Social Media Posts"):
+            generate_top_games_posts(winners, season, week, games_df, teams)
             
 st.session_state["update_schedule"] = False
