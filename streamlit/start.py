@@ -45,7 +45,7 @@ st.subheader("More:")
              
 st.page_link("streamlit/chat.py", label="**Chat**: Chat with other users.", icon=":material/forum:")
 st.page_link("streamlit/feedback.py", label="**Provide Feedback**: Let me know what could be done to improve the app or report bugs.", icon=":material/feedback:")
-st.page_link("streamlit/login.py", label="**User Login**: Login to get user or admin rights.", icon=":material/lock_open:")
 st.page_link("streamlit/games.py", label="**Games**: Some NFL-themed games (Tic-Tac-Toe, Hangman, Sudokus, PixelLogos).", icon=":material/sports_esports:")
+st.page_link("streamlit/login.py", label="**User Login**: Login to get user or admin rights.", icon=":material/lock_open:")
 
 st.divider()

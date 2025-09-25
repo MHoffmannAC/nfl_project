@@ -49,8 +49,8 @@ def main():
         "More": [
             st.Page("streamlit/chat.py", title="Chat", icon=":material/forum:"),
             st.Page("streamlit/feedback.py", title="Provide Feedback", icon=":material/feedback:"),
-            st.Page("streamlit/login.py", title="User Login", icon=":material/lock_open:"),
             st.Page("streamlit/games.py", title="Games", icon=":material/sports_esports:"),
+            st.Page("streamlit/login.py", title="User Login", icon=":material/lock_open:"),
         ]
     })
 
