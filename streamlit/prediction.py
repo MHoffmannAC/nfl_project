@@ -142,7 +142,16 @@ if ("game" in st.query_params) and (not st.query_params['game'] == "None"):
 if "choice" not in st.session_state:
     st.session_state["choice"] = None
 # Main st.session_state["choice"] buttons
-st.session_state["choice"] = st.segmented_control("Choose an option:", ["Live Game", "User Input (Full)", "User Input (Tree)"], default=st.session_state["choice"], selection_mode="single")
+choice = st.segmented_control("Choose an option:", ["Live Game", "User Input (Full)", "User Input (Tree)"], default=st.session_state["choice"], selection_mode="single")
+
+if choice != st.session_state["choice"]:
+    st.session_state["choice"] = choice
+    if choice != "Live Game":
+        if "game_name_selected" in st.session_state:
+            del st.session_state["game_name_selected"]
+        if "play_data" in st.session_state:
+            del st.session_state["play_data"]
+    st.rerun()
 
 if st.session_state["choice"] == "Live Game":
     # Live Game Page
