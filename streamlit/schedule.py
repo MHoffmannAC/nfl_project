@@ -191,7 +191,7 @@ if choice == "All games":
         display_game(game_id)
         
     if st.session_state.get("roles", False) == "admin":
-        if True: # st.button("Generate Social Media Posts"):
+        if st.button("Generate Social Media Posts"):
             generate_game_stats_posts(season, week, games, teams)
 else:
     query = query_week(week, season, game_type)
@@ -203,8 +203,8 @@ else:
         away_team = final['away_team']
         home_score = final['home_score']
         away_score = final['away_score']
-        winner = home_team if home_score > away_score else away_team
-        loser = away_team if winner == home_team else home_team
+        winner = " Tie " if home_score == away_score else (home_team if home_score > away_score else away_team)
+        loser = " Tie " if winner == " Tie " else (away_team if winner == home_team else home_team)
 
         # Get initial and min/max win probs
         initial_home_wp = df_game.iloc[0]['home_wp']
@@ -264,13 +264,14 @@ else:
     # Category winners
     winners = {
         "Biggest Blowout": summary_df.sort_values('score_diff', ascending=False).iloc[0],
+        "Biggest Shutout": summary_df[summary_df['score_diff']==summary_df['total_score']].sort_values('score_diff', ascending=False).iloc[0] if not summary_df[summary_df['score_diff']==summary_df['total_score']].empty else None,
         "Closest Game": summary_df.sort_values('score_diff').iloc[0],
         "Highest Scoring Game": summary_df.sort_values('total_score', ascending=False).iloc[0],
         "Lowest Scoring Game": summary_df.sort_values('total_score').iloc[0],
         "Biggest Domination": summary_df.sort_values('winner_wp_avg', ascending=False).iloc[0],
         "Biggest Upset": upsets.sort_values('underdog_wp').iloc[0] if not upsets.empty else None,
-        "Biggest Comeback": summary_df.sort_values('winner_wp_min').iloc[0],
-        "Latest Comeback": summary_df[summary_df['late_flip_time'].notna()].sort_values('late_flip_time', ascending=True).iloc[0],
+        "Biggest Comeback": summary_df.loc[summary_df['winner']!=" Tie ", :].sort_values('winner_wp_min').iloc[0],
+        "Latest Comeback": summary_df.loc[(summary_df['winner'] != " Tie ") & (summary_df['late_flip_time'].notna())].sort_values('late_flip_time', ascending=True).iloc[0],
         "Most Volatile Game": summary_df.sort_values('volatility', ascending=False).iloc[0],
         "Most Lead Changes": summary_df.sort_values('lead_changes', ascending=False).iloc[0],
     }
@@ -278,8 +279,7 @@ else:
     # Display Results
     for category, row in winners.items():
         if row is None:
-            st.subheader(f"\n🏅 {category}")
-            st.write("   → No upset games this week")
+            st.subheader(f"\n🏅   No {category.split(' ')[1].lower()} games this week")
             st.divider()
             continue
         st.subheader(f"\n🏅 {category}")
@@ -308,7 +308,7 @@ else:
         st.divider()
 
     if st.session_state.get("roles", False) == "admin":
-        if True: # st.button("Generate Social Media Posts"):
+        if st.button("Generate Social Media Posts"):
             generate_top_games_posts(winners, season, week, games_df, teams)
             
 st.session_state["update_schedule"] = False
