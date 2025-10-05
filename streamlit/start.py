@@ -28,7 +28,8 @@ st.subheader("ML/AI Tools:")
              
 st.page_link("streamlit/prediction.py", label="**PlayPredictor**: Perform Live analysis of running games and predict the next play type.", icon=":material/sports_football:")
 st.page_link("streamlit/chatbot.py", label="**ChatBot**: Discuss the latest NFL news, glossary, and rules with the well informed NFLBot.", icon=":material/chat:")
-st.page_link("streamlit/news.py", label="**NewsBots**: Get summaries of recent news or listen to AI generated podcasts.", icon=":material/newspaper:")
+st.page_link("streamlit/news.py", label="**NewsSummarizer**: Get summaries of recent news.", icon=":material/newspaper:")
+st.page_link("streamlit/podcast.py", label="**AIPodcast**: Listen to AI generated podcasts.", icon=":material/support_agent:")
 st.page_link("streamlit/drawing.py", label="**LogoRecognizer**: Test your drawing skills and let an AI guess your favorite team.", icon=":material/image_search:")
 st.page_link("streamlit/memes.py", label="**MemeExplainer**: Check how an AI struggles to explain memes.", icon=":material/school:")
 

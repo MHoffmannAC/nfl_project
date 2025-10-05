@@ -36,7 +36,8 @@ def main():
         "ML/AI Tools": [
             st.Page("streamlit/prediction.py", title="PlayPredictor", icon=":material/sports_football:"),
             st.Page("streamlit/chatbot.py", title="ChatBot", icon=":material/chat:"),
-            st.Page("streamlit/news.py", title="NewsBots", icon=":material/newspaper:"),
+            st.Page("streamlit/news.py", title="NewsSummarizer", icon=":material/newspaper:"),
+            st.Page("streamlit/podcast.py", title="AIPodcast", icon=":material/support_agent:"),
             st.Page("streamlit/drawing.py", title="LogoRecognizer", icon=":material/image_search:"),
             st.Page("streamlit/memes.py", title="MemeExplainer", icon=":material/school:"), 
         ],
