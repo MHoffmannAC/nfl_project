@@ -39,13 +39,19 @@ def create_image_from_stats(game, home_color, away_color, title, subtitle):
 
     # Load a font (or use a default one)
     try:
-        title_font = ImageFont.truetype("arial.ttf", 50)
-        subtitle_font = ImageFont.truetype("arial.ttf", 70)
-        details_font = ImageFont.truetype("arial.ttf", 40)
-    except IOError:
-        title_font = ImageFont.load_default()
-        subtitle_font = ImageFont.load_default()
-        details_font = ImageFont.load_default()
+        title_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
+        subtitle_font = ImageFont.truetype("Arimo-Regular.ttf", 70)
+        details_font = ImageFont.truetype("Arimo-Regular.ttf", 40)
+        score_font = ImageFont.truetype("Arimo-Regular.ttf", 60)
+    except:
+        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        r = requests.get(url)
+        with open("Arimo-Regular.ttf", "wb") as f:
+            f.write(r.content)
+        title_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
+        subtitle_font = ImageFont.truetype("Arimo-Regular.ttf", 70)
+        details_font = ImageFont.truetype("Arimo-Regular.ttf", 40)
+        score_font = ImageFont.truetype("Arimo-Regular.ttf", 60)
 
     # Draw the text
     text_color = "white"
@@ -73,12 +79,15 @@ def create_image_from_stats(game, home_color, away_color, title, subtitle):
         #("fourthDownEff", "4th Down Efficiency"),
         #("redZoneEff", "Red Zone Efficiency"),
         #("turnovers", "Turnovers"),
-        ("interceptions", "Interceptions"),
+        ("interceptions", "Interceptions Caught"),
         ("fumblesLost", "Fumbles Recovered"),
         ("possessionTime", "Time of Possession")
     ]):
         text = f"{stat_value}"
-        draw.text((img_width/2, text_start_y), text, font=details_font, fill=text_color, anchor="mm")
+        if stat_name == "score":
+            draw.text((img_width/2, text_start_y), text, font=score_font, fill=text_color, anchor="mb")
+        else:
+            draw.text((img_width/2, text_start_y), text, font=details_font, fill=text_color, anchor="mm")
         if ":" in str(stats[0][stat_name]):
             away_width = (980-100)*(int(stats[0][stat_name].split(":")[0])+int(stats[0][stat_name].split(":")[1])/60)/60
         elif (float(stats[0][stat_name])+float(stats[1][stat_name])) > 0:
@@ -96,17 +105,17 @@ def create_image_from_stats(game, home_color, away_color, title, subtitle):
     ]
         draw.rectangle(home_coords, fill=f"#{home_color}", outline="white", width=1)
         
-        draw.text((120, text_start_y+75), str(stats[0][stat_name]), font=details_font, fill=text_color, anchor="lm")
-        draw.text((960, text_start_y+75), str(stats[1][stat_name]), font=details_font, fill=text_color, anchor="rm")
-        
+        if stat_name == "score":
+            draw.text((120, text_start_y+75), str(stats[0][stat_name]), font=score_font, fill=text_color, anchor="lm")
+            draw.text((960, text_start_y+75), str(stats[1][stat_name]), font=score_font, fill=text_color, anchor="rm")
+        else:
+            draw.text((120, text_start_y+75), str(stats[0][stat_name]), font=details_font, fill=text_color, anchor="lm")
+            draw.text((960, text_start_y+75), str(stats[1][stat_name]), font=details_font, fill=text_color, anchor="rm")
+
         if spacers[ind] == 1:
             draw.line([(50,text_start_y+150), (1030,text_start_y+150)],fill="white",width=1)
             text_start_y += 20
         text_start_y += 190
-        
-
-    
-    
 
     return img
 
@@ -121,13 +130,17 @@ def create_image_from_plots_and_text(title, subtitle, details, plot1_fig, plot2_
 
     # Load a font (or use a default one)
     try:
-        title_font = ImageFont.truetype("arial.ttf", 50)
-        subtitle_font = ImageFont.truetype("arial.ttf", 70)
-        details_font = ImageFont.truetype("arial.ttf", 50)
-    except IOError:
-        title_font = ImageFont.load_default()
-        subtitle_font = ImageFont.load_default()
-        details_font = ImageFont.load_default()
+        title_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
+        subtitle_font = ImageFont.truetype("Arimo-Regular.ttf", 70)
+        details_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
+    except:
+        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        r = requests.get(url)
+        with open("Arimo-Regular.ttf", "wb") as f:
+            f.write(r.content)
+        title_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
+        subtitle_font = ImageFont.truetype("Arimo-Regular.ttf", 70)
+        details_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
 
     # Draw the text
     text_color = "white"
@@ -188,11 +201,15 @@ def create_cover_image(image_path, title, subtitle):
     cover_img = Image.open(image_path)
     draw = ImageDraw.Draw(cover_img)
     try:
-        cover_font_main = ImageFont.truetype("arial.ttf", 75)
-        cover_font_sub = ImageFont.truetype("arial.ttf", 55)
-    except IOError:
-        cover_font_main = ImageFont.load_default()
-        cover_font_sub = ImageFont.load_default()
+        cover_font_main = ImageFont.truetype("Arimo-Regular.ttf", 75)
+        cover_font_sub = ImageFont.truetype("Arimo-Regular.ttf", 55)
+    except:
+        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        r = requests.get(url)
+        with open("Arimo-Regular.ttf", "wb") as f:
+            f.write(r.content)
+        cover_font_main = ImageFont.truetype("Arimo-Regular.ttf", 75)
+        cover_font_sub = ImageFont.truetype("Arimo-Regular.ttf", 55)
     
     title_text = title
     year_week_text = subtitle
@@ -212,12 +229,17 @@ def create_info_image(image_path):
     info_img = Image.open(image_path)
     draw = ImageDraw.Draw(info_img)
     try:
-        info_font_main = ImageFont.truetype("arial.ttf", 80)
-        info_font_sub = ImageFont.truetype("arial.ttf", 60)
-        info_font_subsub = ImageFont.truetype("arial.ttf", 50)
-    except IOError:
-        info_font_main = ImageFont.load_default()
-        info_font_sub = ImageFont.load_default()
+        info_font_main = ImageFont.truetype("Arimo-Regular.ttf", 80)
+        info_font_sub = ImageFont.truetype("Arimo-Regular.ttf", 60)
+        info_font_subsub = ImageFont.truetype("Arimo-Regular.ttf", 50)
+    except:
+        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        r = requests.get(url)
+        with open("Arimo-Regular.ttf", "wb") as f:
+            f.write(r.content)
+        info_font_main = ImageFont.truetype("Arimo-Regular.ttf", 80)
+        info_font_sub = ImageFont.truetype("Arimo-Regular.ttf", 60)
+        info_font_subsub = ImageFont.truetype("Arimo-Regular.ttf", 50)
     
     text1 = f"Are you interested in more"
     draw.text((info_img_width/2, 900), text1, font=info_font_sub, fill="white", anchor="mm")
