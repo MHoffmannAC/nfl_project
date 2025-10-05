@@ -39,6 +39,7 @@ def plot_play_probabilities(classes, probabilities):
     for spine in ax.spines.values():
         spine.set_edgecolor("white")
     st.pyplot(fig, width="content")
+    plt.close(fig)
 
 def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeName, awayName, show=True, ticks=False):
     ot = timeLeft.iloc[-1]<0
@@ -74,9 +75,6 @@ def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeNa
 
     for spine in ax.spines.values():
         spine.set_edgecolor("#00093a")
-    plt.tight_layout()
-    if show:
-        st.pyplot(fig, width="content")
     
     if ticks:
         ax.set_yticks([0,50,100])
@@ -87,6 +85,11 @@ def plot_win_probabilities(timeLeft, probabilities, homeColor, awayColor, homeNa
             label.set_x(label.get_position()[0] - 0.02)
     else:
         ax.tick_params(axis='y', colors='#00093a', which='both', left=False, right=False, labelleft=False)
+
+    plt.tight_layout()
+    if show:
+        st.pyplot(fig, width="content")
+        plt.close(fig)
 
     return fig
 
@@ -147,7 +150,7 @@ def plot_points(timeLeft, homeScore, awayScore, homeColor, awayColor, homeName, 
     
     if show:
         st.pyplot(fig, width="content")
-    
+        plt.close(fig)
     return fig
 
 def prune_duplicate_leaves(mdl):
