@@ -232,18 +232,28 @@ chain = ConversationalRetrievalChain.from_llm(
 )
 """, language="python")
 
-with st.expander("NewsBots"):
+with st.expander("NewsSummarizer"):
     st.markdown("""
 ### Model Description
 
-The NewsBot provides two functions: summarizing recent news and hosting a conversation on a podcast. Both functions leverage large language models (LLMs) to process and present information.
+The NewsSummarizer summarizes recent news in a user defined style. It leverage large language models (LLMs) to process and present information.
 
-#### News Summarization
+#### Data & Features
 
 The summarization feature fetches the latest news from ESPN.com. For each article, an LLM is used to generate a concise summary. This summary can be tailored to a specific audience, such as a "NFL Expert", "Normal Person", or "Child", by providing different prompt instructions to the model.
 * **LLM:** The underlying LLM is a `llama-3.1-405b`. It is used in a simple LLM-chain with a prompt template.
 
-#### Podcast
+""")
+
+        
+
+with st.expander("AIPodcast"):
+    st.markdown("""
+### Model Description
+
+Conversations between two AIs in the format of a podcast. It leverages large language models (LLMs) to process and present information.
+
+#### Core Components
 
 The podcast feature uses a separate LLM to generate a conversational script based on a news article summary. The script is structured as a dialogue between two hosts: Dave and Julia. This conversation is then converted to audio using a Text-to-Speech (TTS) model.
 * **LLM:** The LLM used for the podcast conversation is `llama-3.1-405b`.
