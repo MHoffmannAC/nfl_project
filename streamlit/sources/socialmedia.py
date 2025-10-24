@@ -90,19 +90,20 @@ def create_image_from_stats(game, home_color, away_color, title, subtitle):
             draw.text((img_width/2, text_start_y), text, font=details_font, fill=text_color, anchor="mm")
         if ":" in str(stats[0][stat_name]):
             away_width = (980-100)*(int(stats[0][stat_name].split(":")[0])+int(stats[0][stat_name].split(":")[1])/60)/60
-        elif (float(stats[0][stat_name])+float(stats[1][stat_name])) > 0:
-            away_width = (980-100)*float(stats[0][stat_name])/(float(stats[0][stat_name])+float(stats[1][stat_name]))
+        elif (max(0,float(stats[0][stat_name]))+max(0,float(stats[1][stat_name]))) > 0:
+            away_width = (980-100)*max(0,float(stats[0][stat_name]))/(max(0,float(stats[0][stat_name]))+max(0,float(stats[1][stat_name])))
         else:
             away_width = (980-100)/2
         away_coords = [
           100, text_start_y + 30,
           100+away_width, text_start_y+120
-    ]
+        ]
         draw.rectangle(away_coords, fill=f"#{away_color}", outline="white", width=1)
         home_coords = [
           100+away_width, text_start_y + 30,
           980, text_start_y+120
-    ]
+        ]
+                
         draw.rectangle(home_coords, fill=f"#{home_color}", outline="white", width=1)
         
         if stat_name == "score":
