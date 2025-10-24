@@ -2,13 +2,19 @@ import streamlit as st
 
 st.title("Date acquisition", anchor=False)
 
-st.write("All tools with the exception of the LogoRecognizer rely mainly on the database from ESPN. For a brief explanation of the images used for training the LogoRecognizer, please refer to its tab in the 'ML/AI models' section.")
+st.write(
+    "All tools with the exception of the LogoRecognizer rely mainly on the database from ESPN. For a brief explanation of the images used for training the LogoRecognizer, please refer to its tab in the 'ML/AI models' section.",
+)
 
 st.header("Data Source: ESPN", anchor=False)
-st.write("The homepage of ESPN provides a wealth of historical sports data, especially for American football. Most of the data visible on their homepage is accessible through API calls. While using those calls is free for everyone, it is entirely undocumented. Therefore we had to rely on call urls collected by other users to perform our requests.")
+st.write(
+    "The homepage of ESPN provides a wealth of historical sports data, especially for American football. Most of the data visible on their homepage is accessible through API calls. While using those calls is free for everyone, it is entirely undocumented. Therefore we had to rely on call urls collected by other users to perform our requests.",
+)
 
 st.subheader("Example API Calls", anchor=False)
-st.write("Below are examples of API calls we used to gather specific data. Use the segmented control below to explore different API endpoints.")
+st.write(
+    "Below are examples of API calls we used to gather specific data. Use the segmented control below to explore different API endpoints.",
+)
 
 
 # Example API Calls
@@ -26,9 +32,9 @@ https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?team={team_id}""
 selected_endpoint = st.segmented_control(
     "Select an API category:",
     list(api_calls.keys()),
-    default="games"
+    default="games",
 )
-if selected_endpoint == None:
+if selected_endpoint is None:
     pass
 else:
     st.code(api_calls[selected_endpoint], language="python")
@@ -45,14 +51,14 @@ if st.toggle("Toggle python code for SQL database creation"):
     st.code("""
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Time, BigInteger, Text, text, UniqueConstraint, ForeignKeyConstraint
 from sqlalchemy.types import Integer
-            
+
 sql_engine = create_engine(f"mysql+pymysql://{user}:{pwd}@{host}:{port}/{db}"
 
 metadata = MetaData()
 
 players_table = Table(
     'players', metadata,
-    Column('player_id', Integer, primary_key=True), 
+    Column('player_id', Integer, primary_key=True),
     Column('team_id', Integer, ForeignKey('teams.team_id')),
     Column('firstName', String(100)),
     Column('lastName', String(100)),
@@ -72,13 +78,13 @@ players_table = Table(
 
 playerstatuses_table = Table(
     'playerstatuses', metadata,
-    Column('status_id', Integer, primary_key=True),  
+    Column('status_id', Integer, primary_key=True),
     Column('name', String(100))
 )
 
 teams_table = Table(
     'teams', metadata,
-    Column('team_id', Integer, primary_key=True),  
+    Column('team_id', Integer, primary_key=True),
     Column('abbreviation', String(10)),
     Column('name', String(255)),
     Column('location', String(255)),
@@ -89,7 +95,7 @@ teams_table = Table(
 
 colleges_table = Table(
     'colleges', metadata,
-    Column('college_id', Integer, primary_key=True),  
+    Column('college_id', Integer, primary_key=True),
     Column('name', String(255)),
     Column('abbreviation', String(10), nullable=True),
     Column('logo', String(255), nullable=True),
@@ -98,7 +104,7 @@ colleges_table = Table(
 
 positions_table = Table(
     'positions', metadata,
-    Column('position_id', Integer, primary_key=True),  
+    Column('position_id', Integer, primary_key=True),
     Column('name', String(100)),
     Column('abbreviation', String(10)),
     Column('parent', Integer, nullable=True),  # Nullable in case parent position is not specified
@@ -134,15 +140,15 @@ games_table = Table(
 
 playtypes_table = Table(
     'playtypes', metadata,
-    Column('playtype_id', Integer, primary_key=True),  
-    Column('text', String(255)),  
+    Column('playtype_id', Integer, primary_key=True),
+    Column('text', String(255)),
     Column('abbreviation', String(10), nullable=True)
 )
 
 plays_table = Table(
     'plays', metadata,
-    Column('play_id', BigInteger, primary_key=True),  
-    Column('game_id', Integer, ForeignKey('games.game_id')),  
+    Column('play_id', BigInteger, primary_key=True),
+    Column('game_id', Integer, ForeignKey('games.game_id')),
     Column('sequenceNumber', Integer),
     Column('homeScore', Integer),
     Column('awayScore', Integer),
