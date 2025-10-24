@@ -1,49 +1,59 @@
-import streamlit as st
-from streamlit_server_state import server_state, server_state_lock, no_rerun
-import streamlit_antd_components as sac
-from streamlit_autorefresh import st_autorefresh
-
 from datetime import datetime, timezone
-import pytz
-from client_timezone import client_timezone
+from typing import Any
 
-from profanity_check import predict
 import pandas as pd
+import pytz
+import streamlit_antd_components as sac
+from client_timezone import client_timezone
+from profanity_check import predict
+from sources.sql import create_sql_engine, query_db, validate_username
+from streamlit_autorefresh import st_autorefresh
+from streamlit_server_state import no_rerun, server_state, server_state_lock
 
-from sources.sql import validate_username, create_sql_engine, query_db
+import streamlit as st
+
 sql_engine = create_sql_engine()
 
 st.title("Chat Rooms", anchor=False)
 
 # Initialize "chat_rooms" in server_state if not already present
 if "chat_rooms" not in server_state:
-    with no_rerun:
-        with server_state_lock["chat_rooms"]:
-            server_state["chat_rooms"] = {}
-            previous_messages = pd.DataFrame(query_db(sql_engine, "SELECT * FROM chat;"))
-            for room_key in previous_messages["room_name"].unique():
-                if room_key not in server_state["chat_rooms"]:
-                    server_state["chat_rooms"][room_key] = []
-                for _, room in previous_messages.loc[previous_messages["room_name"] == room_key].iterrows():
-                    server_state["chat_rooms"][room_key].append({
+    with no_rerun, server_state_lock["chat_rooms"]:
+        server_state["chat_rooms"] = {}
+        previous_messages = pd.DataFrame(
+            query_db(sql_engine, "SELECT * FROM chat;"),
+        )
+        for room_key in previous_messages["room_name"].unique():
+            if room_key not in server_state["chat_rooms"]:
+                server_state["chat_rooms"][room_key] = []
+            for _, room in previous_messages.loc[
+                previous_messages["room_name"] == room_key
+            ].iterrows():
+                server_state["chat_rooms"][room_key].append(
+                    {
                         "message_id": room["message_id"],
                         "chat_username": room["username"],
                         "text": room["message_text"],
-                        "time": room["timestamp"]
-                    })
+                        "time": room["timestamp"],
+                    },
+                )
 
-def extract_all_values(nodes):
+
+def extract_all_values(nodes: list[dict[str, Any]]) -> list[str]:
     values = []
-    def traverse(node):
+
+    def traverse(node: dict[str, Any]) -> None:
         values.append(node["value"])
         if "children" in node:
             for child in node["children"]:
                 traverse(child)
+
     for node in nodes:
         traverse(node)
     return values
 
-def find_value_for_label(tree, label):
+
+def find_value_for_label(tree: list[dict[str, Any]], label: str) -> str | None:
     for node in tree:
         if node["label"] == label:
             return node["value"]
@@ -53,73 +63,171 @@ def find_value_for_label(tree, label):
                 return value
     return None
 
-#format for streamlit_tree_select
+
+# format for streamlit_tree_select
 nodes = [
-    {"label": "NFL", "value": "nfl", "children": [
-        {"label": "AFC", "value": "afc", "children": [
-            {"label": "AFC East", "value": "afc_east", "children": [
-                {"label": "Buffalo Bills", "value": "buffalo_bills"},
-                {"label": "Miami Dolphins", "value": "miami_dolphins"},
-                {"label": "New England Patriots", "value": "new_england_patriots"},
-                {"label": "New York Jets", "value": "new_york_jets"}
-            ]},
-            {"label": "AFC North", "value": "afc_north", "children": [
-                {"label": "Baltimore Ravens", "value": "baltimore_ravens"},
-                {"label": "Cincinnati Bengals", "value": "cincinnati_bengals"},
-                {"label": "Cleveland Browns", "value": "cleveland_browns"},
-                {"label": "Pittsburgh Steelers", "value": "pittsburgh_steelers"}
-            ]},
-            {"label": "AFC South", "value": "afc_south", "children": [
-                {"label": "Houston Texans", "value": "houston_texans"},
-                {"label": "Indianapolis Colts", "value": "indianapolis_colts"},
-                {"label": "Jacksonville Jaguars", "value": "jacksonville_jaguars"},
-                {"label": "Tennessee Titans", "value": "tennessee_titans"}
-            ]},
-            {"label": "AFC West", "value": "afc_west", "children": [
-                {"label": "Denver Broncos", "value": "denver_broncos"},
-                {"label": "Kansas City Chiefs", "value": "kansas_city_chiefs"},
-                {"label": "Las Vegas Raiders", "value": "las_vegas_raiders"},
-                {"label": "Los Angeles Chargers", "value": "los_angeles_chargers"}
-            ]}
-        ]},
-        {"label": "NFC", "value": "nfc", "children": [
-            {"label": "NFC East", "value": "nfc_east", "children": [
-                {"label": "Dallas Cowboys", "value": "dallas_cowboys"},
-                {"label": "New York Giants", "value": "new_york_giants"},
-                {"label": "Philadelphia Eagles", "value": "philadelphia_eagles"},
-                {"label": "Washington Commanders", "value": "washington_commanders"}
-            ]},
-            {"label": "NFC North", "value": "nfc_north", "children": [
-                {"label": "Chicago Bears", "value": "chicago_bears"},
-                {"label": "Detroit Lions", "value": "detroit_lions"},
-                {"label": "Green Bay Packers", "value": "green_bay_packers"},
-                {"label": "Minnesota Vikings", "value": "minnesota_vikings"}
-            ]},
-            {"label": "NFC South", "value": "nfc_south", "children": [
-                {"label": "Atlanta Falcons", "value": "atlanta_falcons"},
-                {"label": "Carolina Panthers", "value": "carolina_panthers"},
-                {"label": "New Orleans Saints", "value": "new_orleans_saints"},
-                {"label": "Tampa Bay Buccaneers", "value": "tampa_bay_buccaneers"}
-            ]},
-            {"label": "NFC West", "value": "nfc_west", "children": [
-                {"label": "Arizona Cardinals", "value": "arizona_cardinals"},
-                {"label": "Los Angeles Rams", "value": "los_angeles_rams"},
-                {"label": "San Francisco 49ers", "value": "san_francisco_49ers"},
-                {"label": "Seattle Seahawks", "value": "seattle_seahawks"}
-            ]}
-        ]},
-    ]},
+    {
+        "label": "NFL",
+        "value": "nfl",
+        "children": [
+            {
+                "label": "AFC",
+                "value": "afc",
+                "children": [
+                    {
+                        "label": "AFC East",
+                        "value": "afc_east",
+                        "children": [
+                            {"label": "Buffalo Bills", "value": "buffalo_bills"},
+                            {"label": "Miami Dolphins", "value": "miami_dolphins"},
+                            {
+                                "label": "New England Patriots",
+                                "value": "new_england_patriots",
+                            },
+                            {"label": "New York Jets", "value": "new_york_jets"},
+                        ],
+                    },
+                    {
+                        "label": "AFC North",
+                        "value": "afc_north",
+                        "children": [
+                            {"label": "Baltimore Ravens", "value": "baltimore_ravens"},
+                            {
+                                "label": "Cincinnati Bengals",
+                                "value": "cincinnati_bengals",
+                            },
+                            {"label": "Cleveland Browns", "value": "cleveland_browns"},
+                            {
+                                "label": "Pittsburgh Steelers",
+                                "value": "pittsburgh_steelers",
+                            },
+                        ],
+                    },
+                    {
+                        "label": "AFC South",
+                        "value": "afc_south",
+                        "children": [
+                            {"label": "Houston Texans", "value": "houston_texans"},
+                            {
+                                "label": "Indianapolis Colts",
+                                "value": "indianapolis_colts",
+                            },
+                            {
+                                "label": "Jacksonville Jaguars",
+                                "value": "jacksonville_jaguars",
+                            },
+                            {"label": "Tennessee Titans", "value": "tennessee_titans"},
+                        ],
+                    },
+                    {
+                        "label": "AFC West",
+                        "value": "afc_west",
+                        "children": [
+                            {"label": "Denver Broncos", "value": "denver_broncos"},
+                            {
+                                "label": "Kansas City Chiefs",
+                                "value": "kansas_city_chiefs",
+                            },
+                            {
+                                "label": "Las Vegas Raiders",
+                                "value": "las_vegas_raiders",
+                            },
+                            {
+                                "label": "Los Angeles Chargers",
+                                "value": "los_angeles_chargers",
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                "label": "NFC",
+                "value": "nfc",
+                "children": [
+                    {
+                        "label": "NFC East",
+                        "value": "nfc_east",
+                        "children": [
+                            {"label": "Dallas Cowboys", "value": "dallas_cowboys"},
+                            {"label": "New York Giants", "value": "new_york_giants"},
+                            {
+                                "label": "Philadelphia Eagles",
+                                "value": "philadelphia_eagles",
+                            },
+                            {
+                                "label": "Washington Commanders",
+                                "value": "washington_commanders",
+                            },
+                        ],
+                    },
+                    {
+                        "label": "NFC North",
+                        "value": "nfc_north",
+                        "children": [
+                            {"label": "Chicago Bears", "value": "chicago_bears"},
+                            {"label": "Detroit Lions", "value": "detroit_lions"},
+                            {
+                                "label": "Green Bay Packers",
+                                "value": "green_bay_packers",
+                            },
+                            {
+                                "label": "Minnesota Vikings",
+                                "value": "minnesota_vikings",
+                            },
+                        ],
+                    },
+                    {
+                        "label": "NFC South",
+                        "value": "nfc_south",
+                        "children": [
+                            {"label": "Atlanta Falcons", "value": "atlanta_falcons"},
+                            {
+                                "label": "Carolina Panthers",
+                                "value": "carolina_panthers",
+                            },
+                            {
+                                "label": "New Orleans Saints",
+                                "value": "new_orleans_saints",
+                            },
+                            {
+                                "label": "Tampa Bay Buccaneers",
+                                "value": "tampa_bay_buccaneers",
+                            },
+                        ],
+                    },
+                    {
+                        "label": "NFC West",
+                        "value": "nfc_west",
+                        "children": [
+                            {
+                                "label": "Arizona Cardinals",
+                                "value": "arizona_cardinals",
+                            },
+                            {"label": "Los Angeles Rams", "value": "los_angeles_rams"},
+                            {
+                                "label": "San Francisco 49ers",
+                                "value": "san_francisco_49ers",
+                            },
+                            {"label": "Seattle Seahawks", "value": "seattle_seahawks"},
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
 ]
 
-def convert_nodes_to_sac_tree_items(nodes):
-    def convert_node(node):
+
+def convert_nodes_to_sac_tree_items(nodes: list[dict[str, Any]]) -> list[sac.TreeItem]:
+    def convert_node(node: dict[str, Any]) -> sac.TreeItem:
         children = [convert_node(child) for child in node.get("children", [])]
         return sac.TreeItem(
             label=node["label"],
-            #tooltip=node["value"],  # store original "value" for reference
-            children=children if children else None
+            children=children if children else None,
         )
+
     return [convert_node(node) for node in nodes]
+
 
 rooms = extract_all_values(nodes)
 
@@ -132,35 +240,30 @@ for room in rooms:
 
 col1, col2 = st.columns([2, 4], gap="large")
 
-with col1:    
+with col1:
     if st.session_state.get("selected_chat_room", "no_room") == "no_room":
         st.info("Please select a room.")
         st.session_state["selected_chat_room"] = "no_room"
     selected_nodes = sac.tree(
-                            items=convert_nodes_to_sac_tree_items(nodes),
-                            label='#### Available chat rooms:',
-                            icon='',
-                            checkbox=False,
-                            open_all=True,
-                            on_change=st.rerun,
-                            key="antd_tree",
-                            show_line=False
-                            #height=500
-                            )
-    if selected_nodes:
-        if len(selected_nodes) == 1:
-            selected_nodes = selected_nodes[0]
+        items=convert_nodes_to_sac_tree_items(nodes),
+        label="#### Available chat rooms:",
+        icon="",
+        checkbox=False,
+        open_all=True,
+        on_change=st.rerun,
+        key="antd_tree",
+        show_line=False,
+    )
+    if selected_nodes and len(selected_nodes) == 1:
+        selected_nodes = selected_nodes[0]
 
     selected_room_label = selected_nodes
     selected_room_value = find_value_for_label(nodes, selected_room_label)
     if selected_room_value:
-        if not selected_room_value == st.session_state["selected_chat_room"]:
+        if selected_room_value != st.session_state["selected_chat_room"]:
             st.session_state["selected_chat_room"] = selected_room_value
             st.rerun()
         st_autorefresh(10000)
-    #else:
-    #    st_autorefresh(1000)
-
 
 
 if selected_room_value:
@@ -169,13 +272,16 @@ if selected_room_value:
 
         room_key = f"room_{selected_room_value}"
 
-        if not "chat_username" in st.session_state:
+        if "chat_username" not in st.session_state:
             if st.session_state.get("username", None):
                 st.session_state["chat_username"] = st.session_state["username"]
                 st.rerun()
             else:
                 chat_username_key = f"chat_username_{selected_room_value}"
-                chat_username_input = st.text_input("Select your nickname", key=chat_username_key)
+                chat_username_input = st.text_input(
+                    "Select your nickname",
+                    key=chat_username_key,
+                )
                 if chat_username_input:
                     if validate_username(chat_username_input):
                         st.session_state["chat_username"] = chat_username_input
@@ -188,18 +294,30 @@ if selected_room_value:
 
         else:
             message_key = f"message_input_{selected_room_value}"
-            def send_message():
+
+            def send_message() -> None:
                 message_text = st.session_state.get(message_key, "").strip()
                 if message_text:
                     if predict([message_text]) == 0:
                         timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
-                        query_db(sql_engine, "INSERT INTO chat (room_name, username, message_text, timestamp) VALUES (:room_name, :username, :message_text, :timestamp);",
-                                 room_name=room_key,
-                                 username=st.session_state["chat_username"],
-                                 message_text=message_text,
-                                 timestamp=timestamp)
-                        message_id = query_db(sql_engine, "SELECT LAST_INSERT_ID() as message_id;")[0]["message_id"]
-                        new_message = {"message_id": message_id, "chat_username": st.session_state["chat_username"], "text": message_text, "time": timestamp}
+                        query_db(
+                            sql_engine,
+                            "INSERT INTO chat (room_name, username, message_text, timestamp) VALUES (:room_name, :username, :message_text, :timestamp);",
+                            room_name=room_key,
+                            username=st.session_state["chat_username"],
+                            message_text=message_text,
+                            timestamp=timestamp,
+                        )
+                        message_id = query_db(
+                            sql_engine,
+                            "SELECT LAST_INSERT_ID() as message_id;",
+                        )[0]["message_id"]
+                        new_message = {
+                            "message_id": message_id,
+                            "chat_username": st.session_state["chat_username"],
+                            "text": message_text,
+                            "time": timestamp,
+                        }
                         with server_state_lock["chat_rooms"]:
                             server_state["chat_rooms"][room_key].append(new_message)
 
@@ -207,29 +325,47 @@ if selected_room_value:
                         st.error("Your text seems inappropriate!")
                     st.session_state[message_key] = ""  # Clear input box after sending
 
-            st.text_area("Message", key=message_key, placeholder="Type your message or paste an URL to an image", height=100, max_chars=1000, label_visibility="visible", on_change=send_message, help="test")
+            st.text_area(
+                "Message",
+                key=message_key,
+                placeholder="Type your message or paste an URL to an image",
+                height=100,
+                max_chars=1000,
+                label_visibility="visible",
+                on_change=send_message,
+                help="test",
+            )
 
         # Display chat history
         st.subheader("Chat history:")
-        #with server_state_lock[room_key]:
+        # with server_state_lock[room_key]:
         msg_to_delete = None
-        
+
         user_timezone = client_timezone()
         for msg in server_state["chat_rooms"][room_key][::-1]:
-            cols = st.columns([2,9,1], gap="medium")
+            cols = st.columns([2, 9, 1], gap="medium")
             with cols[0]:
-                st.write(f"**{msg['chat_username']}**  \n  **[{pytz.utc.localize(msg['time']).astimezone(user_timezone).strftime('%m/%d - %H:%M')}]**")
+                st.write(
+                    f"**{msg['chat_username']}**  \n  **[{pytz.utc.localize(msg['time']).astimezone(user_timezone).strftime('%m/%d - %H:%M')}]**",
+                )
             with cols[1]:
                 try:
-                    st.image(msg['text'], width=250)
+                    st.image(msg["text"], width=250)
                 except:
                     st.write(f"{msg['text']}")
-                
+
             if st.session_state.get("roles", False) == "admin":
                 with cols[2]:
-                    if st.button("❌", key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}"):
+                    if st.button(
+                        "❌",
+                        key=f"delete_{msg['chat_username']}_{msg['text']}_{msg['time']}",
+                    ):
                         msg_to_delete = msg
-                        query_db(sql_engine, "DELETE FROM chat WHERE message_id = :message_id;", message_id=msg["message_id"])
+                        query_db(
+                            sql_engine,
+                            "DELETE FROM chat WHERE message_id = :message_id;",
+                            message_id=msg["message_id"],
+                        )
                         with server_state_lock["chat_rooms"]:
                             server_state["chat_rooms"][room_key].remove(msg_to_delete)
 
