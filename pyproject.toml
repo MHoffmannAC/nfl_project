@@ -4,7 +4,7 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ['ALL']
-ignore = ["D", "E501", "TD", "FIX"]
+ignore = ["D", "E501", "TD", "FIX", "BLE001"]
 
 [tool.ruff.format]
 quote-style = "double"
