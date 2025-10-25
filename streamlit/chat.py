@@ -16,7 +16,6 @@ sql_engine = create_sql_engine()
 
 st.title("Chat Rooms", anchor=False)
 
-# Initialize "chat_rooms" in server_state if not already present
 if "chat_rooms" not in server_state:
     with no_rerun, server_state_lock["chat_rooms"]:
         server_state["chat_rooms"] = {}
@@ -64,7 +63,6 @@ def find_value_for_label(tree: list[dict[str, Any]], label: str) -> str | None:
     return None
 
 
-# format for streamlit_tree_select
 nodes = [
     {
         "label": "NFL",
@@ -78,25 +76,40 @@ nodes = [
                         "label": "AFC East",
                         "value": "afc_east",
                         "children": [
-                            {"label": "Buffalo Bills", "value": "buffalo_bills"},
-                            {"label": "Miami Dolphins", "value": "miami_dolphins"},
+                            {
+                                "label": "Buffalo Bills",
+                                "value": "buffalo_bills",
+                            },
+                            {
+                                "label": "Miami Dolphins",
+                                "value": "miami_dolphins",
+                            },
                             {
                                 "label": "New England Patriots",
                                 "value": "new_england_patriots",
                             },
-                            {"label": "New York Jets", "value": "new_york_jets"},
+                            {
+                                "label": "New York Jets",
+                                "value": "new_york_jets",
+                            },
                         ],
                     },
                     {
                         "label": "AFC North",
                         "value": "afc_north",
                         "children": [
-                            {"label": "Baltimore Ravens", "value": "baltimore_ravens"},
+                            {
+                                "label": "Baltimore Ravens",
+                                "value": "baltimore_ravens",
+                            },
                             {
                                 "label": "Cincinnati Bengals",
                                 "value": "cincinnati_bengals",
                             },
-                            {"label": "Cleveland Browns", "value": "cleveland_browns"},
+                            {
+                                "label": "Cleveland Browns",
+                                "value": "cleveland_browns",
+                            },
                             {
                                 "label": "Pittsburgh Steelers",
                                 "value": "pittsburgh_steelers",
@@ -107,7 +120,10 @@ nodes = [
                         "label": "AFC South",
                         "value": "afc_south",
                         "children": [
-                            {"label": "Houston Texans", "value": "houston_texans"},
+                            {
+                                "label": "Houston Texans",
+                                "value": "houston_texans",
+                            },
                             {
                                 "label": "Indianapolis Colts",
                                 "value": "indianapolis_colts",
@@ -116,14 +132,20 @@ nodes = [
                                 "label": "Jacksonville Jaguars",
                                 "value": "jacksonville_jaguars",
                             },
-                            {"label": "Tennessee Titans", "value": "tennessee_titans"},
+                            {
+                                "label": "Tennessee Titans",
+                                "value": "tennessee_titans",
+                            },
                         ],
                     },
                     {
                         "label": "AFC West",
                         "value": "afc_west",
                         "children": [
-                            {"label": "Denver Broncos", "value": "denver_broncos"},
+                            {
+                                "label": "Denver Broncos",
+                                "value": "denver_broncos",
+                            },
                             {
                                 "label": "Kansas City Chiefs",
                                 "value": "kansas_city_chiefs",
@@ -148,8 +170,14 @@ nodes = [
                         "label": "NFC East",
                         "value": "nfc_east",
                         "children": [
-                            {"label": "Dallas Cowboys", "value": "dallas_cowboys"},
-                            {"label": "New York Giants", "value": "new_york_giants"},
+                            {
+                                "label": "Dallas Cowboys",
+                                "value": "dallas_cowboys",
+                            },
+                            {
+                                "label": "New York Giants",
+                                "value": "new_york_giants",
+                            },
                             {
                                 "label": "Philadelphia Eagles",
                                 "value": "philadelphia_eagles",
@@ -164,8 +192,14 @@ nodes = [
                         "label": "NFC North",
                         "value": "nfc_north",
                         "children": [
-                            {"label": "Chicago Bears", "value": "chicago_bears"},
-                            {"label": "Detroit Lions", "value": "detroit_lions"},
+                            {
+                                "label": "Chicago Bears",
+                                "value": "chicago_bears",
+                            },
+                            {
+                                "label": "Detroit Lions",
+                                "value": "detroit_lions",
+                            },
                             {
                                 "label": "Green Bay Packers",
                                 "value": "green_bay_packers",
@@ -180,7 +214,10 @@ nodes = [
                         "label": "NFC South",
                         "value": "nfc_south",
                         "children": [
-                            {"label": "Atlanta Falcons", "value": "atlanta_falcons"},
+                            {
+                                "label": "Atlanta Falcons",
+                                "value": "atlanta_falcons",
+                            },
                             {
                                 "label": "Carolina Panthers",
                                 "value": "carolina_panthers",
@@ -203,12 +240,18 @@ nodes = [
                                 "label": "Arizona Cardinals",
                                 "value": "arizona_cardinals",
                             },
-                            {"label": "Los Angeles Rams", "value": "los_angeles_rams"},
+                            {
+                                "label": "Los Angeles Rams",
+                                "value": "los_angeles_rams",
+                            },
                             {
                                 "label": "San Francisco 49ers",
                                 "value": "san_francisco_49ers",
                             },
-                            {"label": "Seattle Seahawks", "value": "seattle_seahawks"},
+                            {
+                                "label": "Seattle Seahawks",
+                                "value": "seattle_seahawks",
+                            },
                         ],
                     },
                 ],
@@ -302,7 +345,8 @@ if selected_room_value:
                         timestamp = datetime.now(timezone.utc).replace(tzinfo=None)
                         query_db(
                             sql_engine,
-                            "INSERT INTO chat (room_name, username, message_text, timestamp) VALUES (:room_name, :username, :message_text, :timestamp);",
+                            """INSERT INTO chat (room_name, username, message_text, timestamp)
+                               VALUES (:room_name, :username, :message_text, :timestamp);""",
                             room_name=room_key,
                             username=st.session_state["chat_username"],
                             message_text=message_text,
@@ -323,7 +367,7 @@ if selected_room_value:
 
                     else:
                         st.error("Your text seems inappropriate!")
-                    st.session_state[message_key] = ""  # Clear input box after sending
+                    st.session_state[message_key] = ""
 
             st.text_area(
                 "Message",
@@ -336,7 +380,6 @@ if selected_room_value:
                 help="test",
             )
 
-        # Display chat history
         st.subheader("Chat history:")
         # with server_state_lock[room_key]:
         msg_to_delete = None
