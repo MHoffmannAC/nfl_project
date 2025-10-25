@@ -1,5 +1,7 @@
-import streamlit as st
 from sources.sql import create_sql_engine, get_news
+
+import streamlit as st
+
 sql_engine = create_sql_engine()
 
 iframe = """
@@ -11,7 +13,9 @@ style="height: 1000px; width: 100%; border: none;">
 
 st.markdown(iframe, unsafe_allow_html=True)
 st.write("")
-st.markdown("Due to library incompatibilities, the podcast is hosted on an external streamlit page. If the app does not load, please head over [here](https://nfl-ai-podcast.streamlit.app/) to wake it up.")
+st.markdown(
+    "Due to library incompatibilities, the podcast is hosted on an external streamlit page. If the app does not load, please head over [here](https://nfl-ai-podcast.streamlit.app/) to wake it up.",
+)
 
 st.divider()
 
