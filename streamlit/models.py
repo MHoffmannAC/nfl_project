@@ -1,12 +1,12 @@
 import streamlit as st
-import streamlit_nested_layout as stnl
 
 st.title("Model descriptions", anchor=False)
 
-st.write("On this page you can find a brief summary of the chosen approaches for each tool on this app.")
+st.write(
+    "On this page you can find a brief summary of the chosen approaches for each tool on this app.",
+)
 
 with st.expander("PlayPredictor (play type)"):
-        
     st.markdown("""
 ### Model Description
 
@@ -39,65 +39,65 @@ The model is trained on a dataset of NFL plays from the years 2009 through 2024.
             g.season,
             g.game_type,
             g.week,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN p.homeScore
                 ELSE p.awayScore
             END AS offenseScore,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN p.homeScore
                 ELSE p.awayScore
             END AS defenseScore,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN g.standing_home_overall_win
                 ELSE g.standing_away_overall_win
             END AS standing_offense_overall_win,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN g.standing_home_home_win
                 ELSE g.standing_away_home_win
             END AS standing_offense_home_win,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN g.standing_home_road_win
                 ELSE g.standing_away_road_win
             END AS standing_offense_road_win,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN g.standing_home_overall_loss
                 ELSE g.standing_away_overall_loss
             END AS standing_offense_overall_loss,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN g.standing_home_home_loss
                 ELSE g.standing_away_home_loss
             END AS standing_offense_home_loss,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN g.standing_home_road_loss
                 ELSE g.standing_away_road_loss
             END AS standing_offense_road_loss,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN g.standing_home_overall_win
                 ELSE g.standing_away_overall_win
             END AS standing_defense_overall_win,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN g.standing_home_home_win
                 ELSE g.standing_away_home_win
             END AS standing_defense_home_win,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN g.standing_home_road_win
                 ELSE g.standing_away_road_win
             END AS standing_defense_road_win,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN g.standing_home_overall_loss
                 ELSE g.standing_away_overall_loss
             END AS standing_defense_overall_loss,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN g.standing_home_home_loss
                 ELSE g.standing_away_home_loss
             END AS standing_defense_home_loss,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = FALSE THEN g.standing_home_road_loss
                 ELSE g.standing_away_road_loss
             END AS standing_defense_road_loss,
             t1.abbreviation AS offenseAbr,
             t2.abbreviation AS defenseAbr,
-            CASE 
+            CASE
                 WHEN p.offenseAtHome = TRUE THEN (p.homeScore - p.awayScore)
                 ELSE (p.awayScore - p.homeScore)
             END AS scoreDiff,
@@ -105,10 +105,10 @@ The model is trained on a dataset of NFL plays from the years 2009 through 2024.
         FROM
             nfl.plays p
         LEFT JOIN nfl.games g ON p.game_id = g.game_id
-        LEFT JOIN nfl.teams t1 ON 
+        LEFT JOIN nfl.teams t1 ON
             (p.offenseAtHome = TRUE AND g.home_team_id = t1.team_id) OR
             (p.offenseAtHome = FALSE AND g.away_team_id = t1.team_id)
-        LEFT JOIN nfl.teams t2 ON 
+        LEFT JOIN nfl.teams t2 ON
             (p.offenseAtHome = TRUE AND g.away_team_id = t2.team_id) OR
             (p.offenseAtHome = FALSE AND g.home_team_id = t2.team_id)
         WHERE
@@ -121,34 +121,34 @@ The model is trained on a dataset of NFL plays from the years 2009 through 2024.
                 p1.sequenceNumber,
                 -- Completion Rate Calculation
                 (
-                    SELECT 
+                    SELECT
                         COUNT(*) * 1.0 / NULLIF(
-                            (SELECT COUNT(*) 
-                            FROM nfl.plays p2 
-                            WHERE p2.game_id = p1.game_id 
-                            AND p2.sequenceNumber < p1.sequenceNumber 
+                            (SELECT COUNT(*)
+                            FROM nfl.plays p2
+                            WHERE p2.game_id = p1.game_id
+                            AND p2.sequenceNumber < p1.sequenceNumber
                             AND p2.playtype_id IN (67, 51, 24, 3, 6, 26, 36)), 0
                         )
                     FROM nfl.plays p2
-                    WHERE p2.game_id = p1.game_id 
-                    AND p2.sequenceNumber < p1.sequenceNumber 
+                    WHERE p2.game_id = p1.game_id
+                    AND p2.sequenceNumber < p1.sequenceNumber
                     AND (p2.playtype_id IN (67, 24)
                         OR (p2.playtype_id = 51 AND p2.description NOT LIKE '%incomplete%')
                     )
                 ) AS completionRate,
                 -- Pass to Rush Ratio Calculation
                 (
-                    SELECT 
+                    SELECT
                         COUNT(*) * 1.0 / NULLIF(
-                            (SELECT COUNT(*) 
-                            FROM nfl.plays p2 
-                            WHERE p2.game_id = p1.game_id 
-                            AND p2.sequenceNumber < p1.sequenceNumber 
+                            (SELECT COUNT(*)
+                            FROM nfl.plays p2
+                            WHERE p2.game_id = p1.game_id
+                            AND p2.sequenceNumber < p1.sequenceNumber
                             AND p2.playtype_id IN (5, 68)), 0
                         )
                     FROM nfl.plays p2
-                    WHERE p2.game_id = p1.game_id 
-                    AND p2.sequenceNumber < p1.sequenceNumber 
+                    WHERE p2.game_id = p1.game_id
+                    AND p2.sequenceNumber < p1.sequenceNumber
                     AND p2.playtype_id IN (67, 51, 24, 3, 6, 26, 36)
                 ) AS passToRushRatio
             FROM nfl.plays p1
@@ -185,7 +185,8 @@ The model is trained on a comprehensive dataset of NFL plays from an NFL databas
 The model architecture consists of several densely connected layers, with `relu` activation functions, and `Dropout` layers to prevent overfitting. It is trained using the `Adam` optimizer and a `mean_squared_error` loss function.
 """)
     if st.toggle("Show neural network architecture"):
-        st.code("""
+        st.code(
+            """
 def create_model(input_shape):
     model = Sequential([
         Input(shape=(input_shape,)),
@@ -198,10 +199,14 @@ def create_model(input_shape):
     ])
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
-""", language="python")
+""",
+            language="python",
+        )
 
 with st.expander("ChatBot"):
-    st.write("The ChatBot is an agent-based system that combines several tools with a memory to answer user questions about the NFL.")
+    st.write(
+        "The ChatBot is an agent-based system that combines several tools with a memory to answer user questions about the NFL.",
+    )
     st.markdown("""
 ### Model Description
 
@@ -219,7 +224,8 @@ The agent has access to several specialized sources to assist with queries:
 - **"News":** All news published on ESPN.com during the last 7 days.
 """)
     if st.toggle("Show LLM and Chain Initialization"):
-        st.code("""
+        st.code(
+            """
 llm = ChatGroq(temperature=0,
                groq_api_key=st.secrets['GROQ_TOKEN'],
                model_name="llama-3.3-70b-versatile")
@@ -230,7 +236,9 @@ chain = ConversationalRetrievalChain.from_llm(
     memory=memory,
     combine_docs_chain_kwargs={"prompt": qa_prompt}
 )
-""", language="python")
+""",
+            language="python",
+        )
 
 with st.expander("NewsSummarizer"):
     st.markdown("""
@@ -245,7 +253,6 @@ The summarization feature fetches the latest news from ESPN.com. For each articl
 
 """)
 
-        
 
 with st.expander("AIPodcast"):
     st.markdown("""
@@ -261,7 +268,8 @@ The podcast feature uses a separate LLM to generate a conversational script base
 * **News:** The podcast functionality relies on the stored news articles from ESPN, which are pre-processed and ready for the podcast script generation.
 """)
     if st.toggle("Show LLM and TTS Initialization"):
-        st.code("""
+        st.code(
+            """
 from llama_index.llms.groq import Groq
 from llama_index.core.chat_engine import SimpleChatEngine
 from llama_index.core.memory import ChatMemoryBuffer
@@ -271,7 +279,7 @@ import torch
 
 # LLM and Chat Engine
 llm = Groq(
-    model="llama-3.1-405b", 
+    model="llama-3.1-405b",
     groq_api_key=st.secrets['GROQ_TOKEN']
 )
 
@@ -290,7 +298,9 @@ processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
 model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
 vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
 embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
-""", language="python")
+""",
+            language="python",
+        )
 
 
 with st.expander("LogoRecognizer"):
@@ -323,8 +333,10 @@ The CNN architecture includes several key layers:
 When a user draws a logo, the image data is passed to the trained model. The model outputs a probability distribution across all possible NFL team logos. A prediction is made only if the highest probability (or "confidence") is above a specific threshold (0.3). This ensures that the model only provides a prediction when it is reasonably confident, and it prompts the user to continue drawing if the confidence is low.
 
 """)
-    st.warning("Note: The model was trained on a limited dataset and may not perform well on all drawings. The accuracy can vary significantly based on the quality and style of the drawing. Feel free to upload your drawings to help improve the model!")
-    
+    st.warning(
+        "Note: The model was trained on a limited dataset and may not perform well on all drawings. The accuracy can vary significantly based on the quality and style of the drawing. Feel free to upload your drawings to help improve the model!",
+    )
+
 with st.expander("MemeExplainer"):
     st.markdown("""
 ### Model Description
@@ -344,7 +356,8 @@ The MemeExplainer uses a multimodal large language model (LLM) to analyze and ex
 5.  The app displays a selection of the latest memes and their AI-generated explanations.
 """)
     if st.toggle("Show LLM Initialization"):
-        st.code("""
+        st.code(
+            """
 def get_image_caption(image_url, caption):
     client = Groq(api_key=st.secrets['GROQ_TOKEN'])
     completion = client.chat.completions.create(
@@ -365,4 +378,6 @@ def get_image_caption(image_url, caption):
         stop=None,
     )
     return completion.choices[0].message.content
-        """, language="python")
+        """,
+            language="python",
+        )
