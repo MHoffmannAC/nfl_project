@@ -1,3 +1,0 @@
-ressources/chatbot/embeddings filter=lfs diff=lfs merge=lfs -text
-streamlit/sources/logo_model.pkl filter=lfs diff=lfs merge=lfs -text
-ressources/chatbot/embeddings/** filter=lfs diff=lfs merge=lfs -text
