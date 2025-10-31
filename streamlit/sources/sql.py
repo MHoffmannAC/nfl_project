@@ -302,7 +302,6 @@ def query_db(
 def _extract_team_info(comp: dict, side: str) -> dict:
     team = {}
     team[f"{side}_team_id"] = comp.get("team", {}).get("id")
-    team[f"{side}_team_abr"] = comp.get("team", {}).get("abbreviation")
     team[f"{side}_team_score"] = comp.get("score")
 
     for record in comp.get("records", []):
@@ -408,7 +407,7 @@ def get_games(sql_engine: Engine) -> None:
                 url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={year}&seasontype={seasontype}&week={week}"
                 games_response = requests.get(url, timeout=10)
                 games_data = games_response.json()
-                new_games = new_games + load_game_data(games_data["events"])
+                new_games = new_games + load_game_data(games_data["events"], sql_engine)
     if len(new_games) > 0:
         games_df = pd.DataFrame(new_games)
         games_df["game_id"] = games_df["game_id"].astype("Int64")
@@ -692,9 +691,7 @@ def update_game(
     sql_engine: Engine,
 ) -> None:
     set_clause = ", ".join([f"{col} = :{col}" for col in game_df.index])
-    query = text(
-        f"UPDATE games SET {set_clause} WHERE game_id = :game_id",  # noqa: S608
-    )  # TODO: Check safer option
+    query = f"UPDATE games SET {set_clause} WHERE game_id = :game_id"  # noqa: S608  # TODO: Check safer option
     params = game_df.to_dict()
     params["game_id"] = game_id
     query_db(sql_engine, query, **params)
@@ -781,8 +778,8 @@ def update_week(
         games_df = load_game_data(
             data["events"],
             sql_engine,
-            asDataFrame=True,
-            checkExistence=False,
+            as_dataframe=True,
+            check_existence=False,
         )
         if len(games_df) > 0:
             # loop over already existing games and update
@@ -796,7 +793,7 @@ def update_week(
         url = f"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates={season}&seasontype={2 if game_type == 'regular-season' else 3}&week={week}"
         response = requests.get(url, timeout=10)
         data = response.json()
-        games_df = load_game_data(data["events"], sql_engine, asDataFrame=True)
+        games_df = load_game_data(data["events"], sql_engine, as_dataframe=True)
         _add_new_games(games_df, sql_engine)
 
 
@@ -839,8 +836,8 @@ def update_running_game(
         games_df = load_game_data(
             data["events"],
             sql_engine,
-            asDataFrame=True,
-            checkExistence=False,
+            as_dataframe=True,
+            check_existence=False,
         )
         if (len(games_df) > 0) and (game_id in games_df.index):
             update_game(game_id, games_df.loc[game_id, :], sql_engine)
