@@ -221,7 +221,7 @@ def calculate_standings(
 ) -> pd.DataFrame:
     if games_df is None or games_df.empty:
         stats_df = _init_empty_standings(teams_df)
-        stats_df.loctrs["no_games"] = True
+        stats_df.attrs["no_games"] = True
         return stats_df
 
     stats_df = _init_empty_standings(teams_df)
