@@ -121,7 +121,7 @@ def _render_game_time(
 
         if status == SCHEDULED_GAME:
             st.subheader(game_date_local)
-        elif status == RUNNING_GAME and plays is not None:
+        elif status == RUNNING_GAME and plays is not None and not plays.empty:
             quarter = {
                 1: "1st Qtr",
                 2: "2nd Qtr",
@@ -143,7 +143,7 @@ def _render_score(
 ) -> None:
     with col:
         status = int(game["game_status"])
-        if status > 1 and plays is not None:
+        if status > 1 and plays is not None and not plays.empty:
             if status == RUNNING_GAME:
                 score = f"({plays.iloc[-1]['homeScore']}:{plays.iloc[-1]['awayScore']})"
                 st.markdown(
@@ -161,7 +161,7 @@ def _render_win_prob(
     plays: pd.DataFrame | None,
 ) -> None:
     with col:
-        if plays is not None:
+        if plays is not None and not plays.empty:
             probabilities = nn_regressor.predict(plays)[:, 0]
             plot_win_probabilities(
                 plays["totalTimeLeft"],
