@@ -8,6 +8,7 @@ import pandas as pd
 import requests
 from PIL import Image
 from sources.sql import create_sql_engine, query_db, validate_username
+from sources.utils import display_table
 from streamlit_autorefresh import st_autorefresh
 from streamlit_server_state import no_rerun, server_state, server_state_lock
 
@@ -209,10 +210,12 @@ def display_admin_panel() -> None:
 
 def display_leaderboard() -> None:
     st.header("Leaderboard", anchor=False)
-    st.table(
+    display_table(
         server_state["pl_leaderboard"]
         .sort_values(by=["Total score", "Total games"], ascending=[False, True])
         .set_index("Player Name"),
+        1,
+        3,
     )
     if st.session_state.get("roles", False) == "admin":
         display_admin_panel()

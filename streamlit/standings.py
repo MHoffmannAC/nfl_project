@@ -2,6 +2,7 @@ import math
 
 import pandas as pd
 from sources.sql import create_sql_engine, get_current_week, query_db
+from sources.utils import display_table
 
 import streamlit as st
 
@@ -367,65 +368,6 @@ def apply_tie_breakers(
     return tied_df.drop(columns=["head_to_head_pct"], errors="ignore")
 
 
-def display_table(
-    display_df: pd.DataFrame,
-    highlight: int,
-    highlight2: int | None = None,
-) -> None:
-    def _highlight_rows(row: pd.Series, num_rows: int, num_rows2: int) -> list[str]:
-        return [
-            "background-color: white; color: #00093a"
-            if row.name < num_rows
-            else "background-color: #00239c; color: white"
-            if num_rows2 is not None and row.name < num_rows2
-            else ""
-            for _ in row
-        ]
-
-    html = (
-        display_df.reset_index()
-        .style.set_table_styles(
-            [
-                {
-                    "selector": "table",
-                    "props": [("border-collapse", "collapse"), ("width", "400px")],
-                },
-                {
-                    "selector": "th, td",
-                    "props": [
-                        ("border", "1px solid #ddd"),
-                        ("padding", "8px"),
-                        ("text-align", "center"),
-                    ],
-                },
-                {
-                    "selector": "th",
-                    "props": [("background-color", "#800020"), ("color", "white")],
-                },
-                {"selector": ".col0", "props": [("width", "60px")]},  # Rank
-                {"selector": ".col1", "props": [("width", "200px")]},  # Team
-                {"selector": ".col2", "props": [("width", "70px")]},  # Wins
-                {"selector": ".col3", "props": [("width", "70px")]},  # Losses
-                {"selector": ".col4", "props": [("width", "70px")]},  # Ties
-                {"selector": ".col5", "props": [("width", "90px")]},  # Win %
-            ],
-        )
-        .apply(_highlight_rows, axis=1, args=(highlight, highlight2))
-        .hide(axis="index")
-        .to_html()
-    )
-
-    # Center the table in a div
-    st.markdown(
-        f"""
-        <div style="display:flex; justify-content:left;">
-            <div style="width:600px;">
-                {html}
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def display_standings(df: pd.DataFrame, group_col: str, tie_type: str) -> None:
     """Display standings grouped by a specified column with proper tie-breakers applied."""
     unique_groups = sorted(df[group_col].unique())
@@ -455,7 +397,7 @@ def display_standings(df: pd.DataFrame, group_col: str, tie_type: str) -> None:
         display_df.index = range(1, len(display_df) + 1)
         display_df.index.name = "Rank"
 
-        display_table(display_df, highlight=1)
+        display_table(display_df, highlight=1, column_widths=[60, 200, 70, 70, 70, 90])
 
 
 games_data, divisions_data, teams_data = load_data()
@@ -558,7 +500,12 @@ if (
                 ].rename(columns={"name": "Team", "overall_win_pct": "Win %"})
                 display_df.index = range(1, len(display_df) + 1)
                 display_df.index.name = "Rank"
-                display_table(display_df, highlight=4, highlight2=7)
+                display_table(
+                    display_df,
+                    highlight=4,
+                    highlight2=7,
+                    column_widths=[60, 200, 70, 70, 70, 90],
+                )
                 col_i += 1
 
     else:
