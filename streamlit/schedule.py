@@ -306,7 +306,12 @@ games = query_db(
     week=int(week),
     game_type=str(game_type),
 )
-teams = pd.DataFrame(query_db(sql_engine, "SELECT * FROM teams;"))
+teams = pd.DataFrame(
+    query_db(
+        sql_engine,
+        "SELECT * FROM teams WHERE team_id NOT IN (-2, -1, 31, 32, 38);",
+    ),
+)
 
 if all(game["game_status"] == "3" for game in games):
     choice = st.segmented_control(
@@ -327,20 +332,56 @@ with Path("streamlit/sources/nn_regressor.pkl").open("rb") as f:
 if choice == "All games":
     col1, col2, col0, col3, col4, col5 = st.columns([1, 1, 0.1, 0.5, 0.5, 0.5])
     with col1:
-        st.subheader("Home team")
+        st.markdown(
+            "<h3 style='text-decoration: underline;'>Home Team</h3>",
+            unsafe_allow_html=True,
+        )
     with col2:
-        st.subheader("Away team")
+        st.markdown(
+            "<h3 style='text-decoration: underline;'>Away Team</h3>",
+            unsafe_allow_html=True,
+        )
     with col3:
-        st.subheader("Scheduled")
+        st.markdown(
+            "<h3 style='text-decoration: underline;'>Scheduled</h3>",
+            unsafe_allow_html=True,
+        )
     with col4:
-        st.subheader("Score")
+        st.markdown(
+            "<h3 style='text-decoration: underline;'>Score</h3>",
+            unsafe_allow_html=True,
+        )
     with col5:
-        st.subheader("Odds")
+        st.markdown(
+            "<h3 style='text-decoration: underline;'>Odds</h3>",
+            unsafe_allow_html=True,
+        )
     st.divider()
 
     game_ids = [game["game_id"] for game in games]
     for game_id in game_ids:
         display_game(game_id)
+
+    all_team_ids = set(teams["team_id"])
+    playing_team_ids = set()
+    for game in games:
+        playing_team_ids.add(game["home_team_id"])
+        playing_team_ids.add(game["away_team_id"])
+    bye_team_ids = all_team_ids - playing_team_ids
+
+    if bye_team_ids:
+        bye_teams = (
+            teams.loc[teams["team_id"].isin(bye_team_ids), "name"]
+            .sort_values()
+            .to_list()
+        )
+        st.divider()
+        st.markdown(
+            "<h2 style='text-decoration: underline;'>Bye Week Teams</h2>",
+            unsafe_allow_html=True,
+        )
+        for team in bye_teams:
+            st.subheader(team)
 
     if st.session_state.get("roles", False) == "admin":  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
