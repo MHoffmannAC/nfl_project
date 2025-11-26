@@ -30,6 +30,11 @@ current_week, current_season, current_game_type = get_current_week()
 
 if "user_timezone" not in st.session_state:
     st.session_state["user_timezone"] = client_timezone()
+    st.session_state["user_timezone_rerun"] = True
+elif st.session_state.get("user_timezone_rerun", False):
+    st.session_state["user_timezone"] = client_timezone()
+    st.session_state["user_timezone_rerun"] = False
+
 
 st.markdown(
     """

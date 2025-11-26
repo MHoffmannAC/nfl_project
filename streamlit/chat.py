@@ -14,6 +14,13 @@ import streamlit as st
 
 sql_engine = create_sql_engine()
 
+if "user_timezone" not in st.session_state:
+    st.session_state["user_timezone"] = client_timezone()
+    st.session_state["user_timezone_rerun"] = True
+elif st.session_state.get("user_timezone_rerun", False):
+    st.session_state["user_timezone"] = client_timezone()
+    st.session_state["user_timezone_rerun"] = False
+
 st.title("Chat Rooms", anchor=False)
 
 if "chat_rooms" not in server_state:
@@ -383,9 +390,6 @@ if selected_room_value:
         st.subheader("Chat history:")
         # with server_state_lock[room_key]:
         msg_to_delete = None
-
-        if "user_timezone" not in st.session_state:
-            st.session_state["user_timezone"] = client_timezone()
 
         for msg in server_state["chat_rooms"][room_key][::-1]:
             cols = st.columns([2, 9, 1], gap="medium")
