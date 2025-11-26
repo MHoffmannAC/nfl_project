@@ -27,7 +27,9 @@ RUNNING_GAME = 2
 FINISHED_GAME = 3
 
 current_week, current_season, current_game_type = get_current_week()
-user_timezone = client_timezone()
+
+if "user_timezone" not in st.session_state:
+    st.session_state["user_timezone"] = client_timezone()
 
 st.markdown(
     """
@@ -114,7 +116,9 @@ def _render_game_time(
 ) -> None:
     with col:
         game_date = pytz.utc.localize(game["date"])
-        game_date_local = game_date.astimezone(user_timezone).strftime(
+        game_date_local = game_date.astimezone(
+            st.session_state["user_timezone"],
+        ).strftime(
             "%Y-%m-%d %H:%M",
         )
         status = int(game["game_status"])

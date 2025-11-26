@@ -384,12 +384,14 @@ if selected_room_value:
         # with server_state_lock[room_key]:
         msg_to_delete = None
 
-        user_timezone = client_timezone()
+        if "user_timezone" not in st.session_state:
+            st.session_state["user_timezone"] = client_timezone()
+
         for msg in server_state["chat_rooms"][room_key][::-1]:
             cols = st.columns([2, 9, 1], gap="medium")
             with cols[0]:
                 st.write(
-                    f"**{msg['chat_username']}**  \n  **[{pytz.utc.localize(msg['time']).astimezone(user_timezone).strftime('%m/%d - %H:%M')}]**",
+                    f"**{msg['chat_username']}**  \n  **[{pytz.utc.localize(msg['time']).astimezone(st.session_state['user_timezone']).strftime('%m/%d - %H:%M')}]**",
                 )
             with cols[1]:
                 try:
