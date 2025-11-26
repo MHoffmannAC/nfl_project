@@ -599,9 +599,7 @@ if (st.session_state["choice"] == "User Input (Full)") or (
         "awayScore": away_score,
         "offenseScore": home_score if team_possession == home_team else away_score,
         "defenseScore": away_score if team_possession == home_team else home_score,
-        "scoreDiff": home_score - away_score
-        if team_possession == home_team
-        else away_score - home_score,
+        "scoreDiff": home_score - away_score,
         "standing_offense_overall_win": standing_home_overall_win
         if team_possession == home_team
         else standing_away_overall_win,
