@@ -468,17 +468,27 @@ if (st.session_state["choice"] == "User Input (Full)") or (
 
     st.divider()
 
-    standings_input = "No"
+    if "display_standings" not in st.session_state:
+        st.session_state["display_standings"] = False
+
     if st.session_state["choice"] != "Live Game":
         col1, _, _ = st.columns(3)
         with col1:
-            standings_input = st.radio(
-                "Hide standings?",
-                options=["No", "Yes"],
-                index=1,
+            if st.session_state["display_standings"]:
+                toggle_text = "Toggle to hide standings"
+            else:
+                toggle_text = "Toggle to display standings"
+
+            standings_toggled = st.toggle(
+                toggle_text,
+                value=st.session_state["display_standings"],
             )
 
-    if standings_input == "No":
+        if standings_toggled != st.session_state["display_standings"]:
+            st.session_state["display_standings"] = standings_toggled
+            st.rerun()
+
+    if st.session_state["display_standings"]:
         col1, col2, _ = st.columns(3)
 
         with col1:
@@ -852,13 +862,20 @@ if st.session_state["choice"] == "User Input (Tree)":
     if "show_tree" not in st.session_state:
         st.session_state["show_tree"] = False
 
+    if st.session_state["show_tree"]:
+        toggle_text = "Toggle to hide Tree Visualization"
+    else:
+        toggle_text = "Toggle to show Tree Visualization"
+
     toggled = st.toggle(
-        "Toggle path visualization (Text or Tree)",
+        toggle_text,
         value=st.session_state["show_tree"],
     )
 
-    if toggled:
-        st.session_state["show_tree"] = True
+    if toggled != st.session_state["show_tree"]:
+        st.session_state["show_tree"] = toggled
+        st.rerun()
+    elif toggled:
         dtree = clf.named_steps["classifier"]
         feature_names = clf.named_steps["preprocessing"].get_feature_names_out()
         display_tree(
@@ -867,7 +884,6 @@ if st.session_state["choice"] == "User Input (Tree)":
             highlight=[i[3] for i in st.session_state.path] + [current_node],
         )
     else:
-        st.session_state["show_tree"] = False
         st.write("Path through the tree:")
         for step in st.session_state.path:
             st.markdown(
