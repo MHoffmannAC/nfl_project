@@ -87,7 +87,7 @@ def _render_reload_button(
 ) -> None:
     with col:
         if int(game["game_status"]) not in [SCHEDULED_GAME, FINISHED_GAME]:  # noqa: SIM102
-            if st.button("🗘", key=f"reload-{game_id}"):
+            if st.button(":material/sync:", key=f"reload-{game_id}"):
                 with st.spinner(""):
                     update_running_game(game_id, sql_engine, update_status=True)
 
@@ -200,12 +200,12 @@ def _render_win_prob(
 def display_game(game_id: int) -> None:
     game = _load_game(game_id)
 
-    col1, col2, col0, col3, col4, col5 = st.columns([1, 1, 0.1, 0.5, 0.5, 0.5])
+    col0, col1, col2, col3, col4, col5 = st.columns([1, 1, 0.5, 0.1, 0.5, 0.5])
 
-    _render_reload_button(col0, game_id, game)
-    _render_team_names(col1, col2, game)
+    _render_team_names(col0, col1, game)
     plays = _get_plays_if_running(game)
-    _render_game_time(col3, game, plays)
+    _render_reload_button(col3, game_id, game)
+    _render_game_time(col2, game, plays)
     _render_score(col4, game, plays)
     _render_win_prob(col5, game, plays)
 
@@ -339,18 +339,18 @@ with Path("streamlit/sources/nn_regressor.pkl").open("rb") as f:
     nn_regressor = dill.load(f)  # noqa: S301 # TODO replace with keras load
 
 if choice == "All games":
-    col1, col2, col0, col3, col4, col5 = st.columns([1, 1, 0.1, 0.5, 0.5, 0.5])
-    with col1:
+    col0, col1, col2, col3, col4, col5 = st.columns([1, 1, 0.5, 0.1, 0.5, 0.5])
+    with col0:
         st.markdown(
             "<h3 style='text-decoration: underline;'>Home Team</h3>",
             unsafe_allow_html=True,
         )
-    with col2:
+    with col1:
         st.markdown(
             "<h3 style='text-decoration: underline;'>Away Team</h3>",
             unsafe_allow_html=True,
         )
-    with col3:
+    with col2:
         st.markdown(
             "<h3 style='text-decoration: underline;'>Scheduled</h3>",
             unsafe_allow_html=True,
