@@ -353,13 +353,16 @@ def load_game_data(
     new_games = []
 
     for game_data in events:
-        game_id = game_data.get("id")
-        if game_id is None:
-            continue
-        if check_existence and int(game_id) in games_in_db:
-            continue
-        game = _build_game_dict(game_data)
-        new_games.append(game)
+        try:
+            game_id = game_data.get("id")
+            if game_id is None:
+                continue
+            if check_existence and int(game_id) in games_in_db:
+                continue
+            game = _build_game_dict(game_data)
+            new_games.append(game)
+        except:
+            pass
 
     if as_dataframe:
         games_df = pd.DataFrame(new_games)
