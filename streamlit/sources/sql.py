@@ -232,7 +232,8 @@ def append_new_rows(
     sql_engine: Engine,
     id_column: str,
 ) -> None:
-    existing_ids_set = get_existing_ids(sql_engine, table, id_column)
+    existing_ids_set = {int(x) for x in get_existing_ids(sql_engine, table, id_column)}
+    dataframe.index = dataframe.index.astype("int64")
     if not existing_ids_set:
         dataframe.to_sql(
             table,
@@ -258,7 +259,8 @@ def append_or_update_rows(
     sql_engine: Engine,
     id_column: str,
 ) -> None:
-    existing_ids_set = get_existing_ids(sql_engine, table, id_column)
+    existing_ids_set = {int(x) for x in get_existing_ids(sql_engine, table, id_column)}
+    dataframe.index = dataframe.index.astype("int64")
 
     if not existing_ids_set:
         dataframe.to_sql(
@@ -283,7 +285,7 @@ def append_or_update_rows(
             update_dict = row.to_dict()
             set_clause = ", ".join([f"{col} = :{col}" for col in update_dict])
             query = f"UPDATE {table} SET {set_clause} WHERE {id_column} = :id"  # TODO: Check safer option  #noqa: S608
-            query_db(sql_engine, query, **update_dict, id=idx)
+            query_db(sql_engine, query, **update_dict, id=int(idx))
 
 
 def query_db(
