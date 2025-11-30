@@ -67,6 +67,8 @@ def login_page() -> None:
     st.divider()
     st.subheader("List of features for admins:", anchor=False)
     st.write("""
+            - all features for registered members
+            - access to admin board
             - delete chat messages
             - delete leaderboard entries or reset leaderboard (PixelLogo)
             - read user feedback
