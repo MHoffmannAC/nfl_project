@@ -61,9 +61,11 @@ def plot_win_probabilities(
     awayName,
     show=True,
     ticks=False,
+    postseason=False,
 ):
     timeLeft = timeLeft.copy()
-    timeLeft.loc[timeLeft < 0] = timeLeft.loc[timeLeft < 0] + 300 # ToDo: fix in DB
+    if not postseason:
+        timeLeft.loc[timeLeft < 0] = timeLeft.loc[timeLeft < 0] + 300  # T0DO: fix in DB
     ot = timeLeft.iloc[-1] < 0
     fig, ax = plt.subplots(figsize=(3, 2), dpi=400)
     fig.patch.set_facecolor("#00093a")
@@ -100,15 +102,26 @@ def plot_win_probabilities(
     ax.set_ylim(0, 100)
 
     if ot:
-        ax.set_xlim(60, -10)
-        quarter_labels = ["Q1", "Q2", "Q3", "Q4", "OT"]
-        quarter_positions = [
-            3600 / 60 - 7.5,
-            2700 / 60 - 7.5,
-            1800 / 60 - 7.5,
-            900 / 60 - 7.5,
-            -600 / 60 + 7.5,
-        ]
+        if postseason:
+            ax.set_xlim(60, -15)
+            quarter_labels = ["Q1", "Q2", "Q3", "Q4", "OT"]
+            quarter_positions = [
+                3600 / 60 - 7.5,
+                2700 / 60 - 7.5,
+                1800 / 60 - 7.5,
+                900 / 60 - 7.5,
+                -900 / 60 + 7.5,
+            ]
+        else:
+            ax.set_xlim(60, -10)
+            quarter_labels = ["Q1", "Q2", "Q3", "Q4", "OT"]
+            quarter_positions = [
+                3600 / 60 - 7.5,
+                2700 / 60 - 7.5,
+                1800 / 60 - 7.5,
+                900 / 60 - 7.5,
+                -600 / 60 + 7.5,
+            ]
     else:
         ax.set_xlim(60, 0)
         quarter_labels = ["Q1", "Q2", "Q3", "Q4"]
