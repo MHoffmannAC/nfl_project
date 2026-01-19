@@ -28,12 +28,10 @@ elif st.session_state.get("user_timezone_rerun", False):
     st.session_state["user_timezone_rerun"] = False
 
 
-@st.fragment
-def games_tile():
-    st.header("Schedule")
+def _get_games_df(season, week, game_type):
     games = query_db(
         sql_engine,
-        "SELECT name, date, game_status FROM games WHERE season=:season AND week=:week AND game_type=:game_type ORDER BY date;",
+        "SELECT g.date as date, CONCAT(h.abbreviation,' vs. ', a.abbreviation) as game, CONCAT(g.home_team_score, ':', away_team_score) as score, g.game_status AS 'status' FROM games g JOIN teams h ON g.home_team_id=h.team_id JOIN teams a ON g.away_team_id=a.team_id WHERE (season=:season AND week=:week AND game_type=:game_type) or (game_status = 2) ORDER BY date;",
         season=int(season),
         week=int(week),
         game_type=str(game_type),
@@ -43,18 +41,55 @@ def games_tile():
         games_df["date"]
         .dt.tz_localize('UTC')
         .dt.tz_convert(st.session_state["user_timezone"])
-        .dt.strftime("%Y-%m-%d %H:%M")
     )
-    st.dataframe(games_df, hide_index=True)
+    return games_df
+
+@st.fragment
+def games_tile():
+    st.header("Schedule")
+    
+    display_df = _get_games_df(season, week, game_type)
+    display_df["date"] = display_df["date"].dt.strftime("%a %m/%d/%y - %H:%M")
+    status_map = {
+        "1": "scheduled",
+        "2": "running",
+        "3": "finished",
+    }
+
+    display_df["status"] = display_df["status"].map(status_map)
+    display = st.empty()
+    display.dataframe(display_df, hide_index=True)
     cola, colb, colc = st.columns([1,1.3,0.8])
     with cola:
-        st.button("Update current week", on_click=update_week, args=(week, season, game_type, sql_engine))
+        if st.button("Update current week"):
+            status = st.empty()
+            status.error("Updating games!")
+            update_week(week, season, game_type, sql_engine)
+            games_df = _get_games_df(season, week, game_type)
+            display.dataframe(games_df, hide_index=True)
+            status.success("All games updated.")
     with colb:
         if st.button("Update current week (repeated)"):
-            st.error("Auto-update running!")
+            status = st.empty()
             while True:
+                status.error("Updating games!")
                 update_week(week, season, game_type, sql_engine)
-                sleep(60)
+                games_df = _get_games_df(season, week, game_type)
+                earliest_game_time = pd.to_datetime(games_df.loc[~(games_df['status']=="3"), 'date']).min()
+                now_time = pd.Timestamp.now(tz=st.session_state["user_timezone"])
+                if pd.isna(earliest_game_time):
+                    games_df = _get_games_df(season, week+1, game_type)
+                    earliest_game_time = pd.to_datetime(games_df.loc[games_df['status'].isin(["1","2"]), 'date']).min()
+                display.dataframe(games_df, hide_index=True)
+                if now_time >= earliest_game_time:
+                    status.error("Some games are running. Next update in 60 seconds.")
+                    sleep(60)
+                else:
+                    sleep_seconds = (earliest_game_time - now_time).total_seconds() + 60
+                    status.error(f"Next update on {(earliest_game_time + pd.Timedelta(seconds=60)).strftime('%A %m/%d/%Y at %H:%M')}")
+                    print(f"{now_time.strftime('%m/%d/%Y %H:%M')}   -   Next update on {(earliest_game_time + pd.Timedelta(seconds=60)).strftime('%A %m/%d/%Y at %H:%M')}")
+                    sleep(sleep_seconds)
+
     with colc:
         st.button("Update full schedule", on_click=update_full_schedule, args=(season, sql_engine))
 
@@ -133,7 +168,7 @@ def user_tile():
     st.header("Users")
     user = query_db(
         sql_engine,
-        "SELECT * FROM users ORDER BY user_id DESC LIMIT 20;",
+        "SELECT user_id, user_name, first_name, last_name, roles FROM users ORDER BY user_id DESC LIMIT 20;",
     )
     st.dataframe(
         pd.DataFrame(user),
