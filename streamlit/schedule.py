@@ -386,7 +386,7 @@ if choice == "All games":
 
     if st.session_state.get("roles", False) == "admin":  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
-            generate_game_stats_posts(season, week, games, teams)
+            generate_game_stats_posts(season, inverse_week_mapping[week], games, teams)
 else:
     query = query_week(week, season, game_type)
     games_df = pd.DataFrame(query_db(sql_engine, query))
@@ -551,6 +551,6 @@ else:
 
     if st.session_state.get("roles", False) == "admin":  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
-            generate_top_games_posts(winners, season, week, games_df, teams)
+            generate_top_games_posts(winners, season, inverse_week_mapping[week], games_df, teams)
 
 st.session_state["update_schedule"] = False
