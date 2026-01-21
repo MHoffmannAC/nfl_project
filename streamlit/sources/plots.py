@@ -1,14 +1,16 @@
+import os
+import re
+from io import BytesIO
+
+import fitz
+import graphviz
 import matplotlib.pyplot as plt
 import numpy as np
-import streamlit as st
-import os
+from PIL import Image
 from sklearn.tree import export_graphviz
 from sklearn.tree._tree import TREE_LEAF
-import graphviz
-import fitz
-from PIL import Image
-from io import BytesIO
-import re
+
+import streamlit as st
 
 
 def plot_play_probabilities(classes, probabilities):
@@ -94,7 +96,11 @@ def plot_win_probabilities(
 
     for time in range(0, 3601, 900):  # 900 seconds = 15 minutes
         ax.axvline(
-            time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7
+            time / 60,
+            color="#00093a",
+            linestyle="--",
+            linewidth=0.25,
+            alpha=0.7,
         )
 
     ax.set_ylabel("Win Probability", fontsize=10, color="white")
@@ -143,7 +149,9 @@ def plot_win_probabilities(
         color=f"#{homeColor}",
         fontsize=8,
         bbox=dict(
-            facecolor="white", edgecolor=f"#{homeColor}", boxstyle="round,pad=0.3"
+            facecolor="white",
+            edgecolor=f"#{homeColor}",
+            boxstyle="round,pad=0.3",
         ),
     )
     ax.text(
@@ -168,7 +176,10 @@ def plot_win_probabilities(
     if ticks:
         ax.set_yticks([0, 50, 100])
         ax.set_yticklabels(
-            ["100%", "50%", "100%"], fontsize=6, color="white", rotation=45
+            ["100%", "50%", "100%"],
+            fontsize=6,
+            color="white",
+            rotation=45,
         )
         ax.tick_params(
             axis="y",
@@ -210,9 +221,11 @@ def plot_points(
     awayName,
     show=True,
     right=True,
+    postseason=False,
 ):
     timeLeft = timeLeft.copy()
-    timeLeft.loc[timeLeft < 0] = timeLeft.loc[timeLeft < 0] + 300 # ToDo: fix in DB
+    if not postseason:
+        timeLeft.loc[timeLeft < 0] = timeLeft.loc[timeLeft < 0] + 300
     ot = timeLeft.iloc[-1] < 0
     fig, ax = plt.subplots(figsize=(3, 2), dpi=400)
     fig.patch.set_facecolor("#00093a")
@@ -258,13 +271,17 @@ def plot_points(
         0,
         where=(homeScore_post == awayScore_post),
         interpolate=True,
-        color=f"#DDDDDD",
+        color="#DDDDDD",
         alpha=0.75,
     )
 
     for time in range(0, 3600, 900):  # 900 seconds = 15 minutes
         ax.axvline(
-            time / 60, color="#00093a", linestyle="--", linewidth=0.25, alpha=0.7
+            time / 60,
+            color="#00093a",
+            linestyle="--",
+            linewidth=0.25,
+            alpha=0.7,
         )
 
     ax.tick_params(axis="x", colors="#00093a")
@@ -289,15 +306,26 @@ def plot_points(
     ax.yaxis.tick_right()
 
     if ot:
-        ax.set_xlim(60, -15)
-        quarter_labels = ["Q1", "Q2", "Q3", "Q4", "OT"]
-        quarter_positions = [
-            3600 / 60 - 7.5,
-            2700 / 60 - 7.5,
-            1800 / 60 - 7.5,
-            900 / 60 - 7.5,
-            -900 / 60 + 7.5,
-        ]
+        if postseason:
+            ax.set_xlim(60, -15)
+            quarter_labels = ["Q1", "Q2", "Q3", "Q4", "OT"]
+            quarter_positions = [
+                3600 / 60 - 7.5,
+                2700 / 60 - 7.5,
+                1800 / 60 - 7.5,
+                900 / 60 - 7.5,
+                -900 / 60 + 7.5,
+            ]
+        else:
+            ax.set_xlim(60, -10)
+            quarter_labels = ["Q1", "Q2", "Q3", "Q4", "OT"]
+            quarter_positions = [
+                3600 / 60 - 7.5,
+                2700 / 60 - 7.5,
+                1800 / 60 - 7.5,
+                900 / 60 - 7.5,
+                -600 / 60 + 7.5,
+            ]
     else:
         ax.set_xlim(60, 0)
         quarter_labels = ["Q1", "Q2", "Q3", "Q4"]
@@ -388,7 +416,7 @@ def display_tree(clf, feature_names, font_size=10, label_font_size=10, highlight
                 + line.split(">,")[1]
             )
             if (
-                highlight and not node_id in highlight
+                highlight and node_id not in highlight
             ):  # and not (tree.children_left[node_id] == tree.children_right[node_id] == -1):
                 new_line = re.sub(
                     r'fillcolor="#[0-9a-fA-F]{6}"',

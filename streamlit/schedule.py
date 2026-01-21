@@ -536,6 +536,7 @@ else:
                 teams.loc[teams["name"] == row["away_team"], "color"].to_numpy()[0],
                 row["home_team"],
                 row["away_team"],
+                postseason = (game_type == "post-season"),
             )
         with cols[1]:
             plot_points(
@@ -546,6 +547,7 @@ else:
                 teams.loc[teams["name"] == row["away_team"], "color"].to_numpy()[0],
                 row["home_team"],
                 row["away_team"],
+                postseason = (game_type == "post-season"),
             )
         st.divider()
 

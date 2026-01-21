@@ -424,6 +424,7 @@ def generate_top_games_posts(winners, year, week, games_df, teams_df):
             away_team_name,
             show=False,
             ticks=True,
+            postseason=(type(week) is str)
         )
 
         score_plot = plot_points(
@@ -436,6 +437,7 @@ def generate_top_games_posts(winners, year, week, games_df, teams_df):
             away_team_name,
             show=False,
             right=False,
+            postseason=(type(week) is str)
         )
 
         # Create a detailed string for the image
