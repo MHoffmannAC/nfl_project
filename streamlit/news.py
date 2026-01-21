@@ -92,8 +92,12 @@ if headline is not None:
 
 st.divider()
 
-if st.button("Update News"):
-    with st.spinner(text="Loading latest news..."):
-        get_news(sql_engine)
-    st.toast("News updated.")
-    st.rerun()
+@st.fragment
+def update_news_fragment():
+    if st.button("Update News"):
+        with st.spinner(text="Loading latest news..."):
+            get_news(sql_engine)
+        st.toast("News updated.")
+        st.rerun()
+        
+update_news_fragment()

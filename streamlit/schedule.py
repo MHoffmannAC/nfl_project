@@ -58,6 +58,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+@st.fragment
+def _admin_all_games() -> None:
+    if st.session_state.get("roles", False) == "admin" and week_concluded:  # noqa: SIM102
+        if st.button("Generate Social Media Posts"):
+            generate_game_stats_posts(season, inverse_week_mapping[week], games, teams)
+
+@st.fragment
+def _admin_top_games() -> None:            
+    if st.session_state.get("roles", False) == "admin" and week_concluded:  # noqa: SIM102
+        if st.button("Generate Social Media Posts"):
+            generate_top_games_posts(winners, season, inverse_week_mapping[week], games_df, teams)
 
 def _load_game(game_id: int) -> dict:
     game = query_db(
@@ -275,7 +286,7 @@ with col1:
         st.session_state["game_type"] = game_type
         st.rerun()
 
-    week_mapping = {"SuperBowl": 5, "ConfChamp": 3, "DivRound": 2, "WildCard": 1}
+    week_mapping = {"WildCard": 1, "DivRound": 2, "ConfChamp": 3, "SuperBowl": 5}
     inverse_week_mapping = {v: k for k, v in week_mapping.items()}
     if game_type == "regular-season":
         week_options = list(range(1, 19))
@@ -285,7 +296,7 @@ with col1:
             index=week_options.index(current_week),
         )
     else:
-        week_options = ["SuperBowl", "ConfChamp", "DivRound", "WildCard"]
+        week_options = list(week_mapping.keys())
         week = st.selectbox(
             "Week",
             options=week_options,
@@ -319,7 +330,8 @@ def load_teams():
 games = load_games()
 teams = load_teams()
 
-if all(game["game_status"] == "3" for game in games):
+week_concluded = all(game["game_status"] == "3" for game in games)
+if week_concluded:
     choice = st.segmented_control(
         "Which games to display",
         ["All games", "Top games of the week"],
@@ -401,9 +413,7 @@ if choice == "All games":
             st.error("One or more matchups are TBD pending the completion of the previous round. Update the standings once the matchups are determined.")
         
 
-    if st.session_state.get("roles", False) == "admin":  # noqa: SIM102
-        if st.button("Generate Social Media Posts"):
-            generate_game_stats_posts(season, inverse_week_mapping[week], games, teams)
+    _admin_all_games()
 else:
     query = query_week(week, season, game_type)
     games_df = pd.DataFrame(query_db(sql_engine, query))
@@ -568,8 +578,6 @@ else:
             )
         st.divider()
 
-    if st.session_state.get("roles", False) == "admin":  # noqa: SIM102
-        if st.button("Generate Social Media Posts"):
-            generate_top_games_posts(winners, season, inverse_week_mapping[week], games_df, teams)
+    _admin_top_games()
 
 st.session_state["update_schedule"] = False
