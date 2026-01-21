@@ -299,19 +299,25 @@ with col3:
         st.session_state["update_schedule"] = True
         st.rerun()
 
-games = query_db(
-    sql_engine,
-    "SELECT * FROM games WHERE season=:season AND week=:week AND game_type=:game_type ORDER BY date;",
-    season=int(season),
-    week=int(week),
-    game_type=str(game_type),
-)
-teams = pd.DataFrame(
-    query_db(
+def load_games():
+    return query_db(
         sql_engine,
-        "SELECT * FROM teams WHERE team_id NOT IN (-2, -1, 31, 32, 38);",
-    ),
-)
+        "SELECT * FROM games WHERE season=:season AND week=:week AND game_type=:game_type ORDER BY date;",
+        season=int(season),
+        week=int(week),
+        game_type=str(game_type),
+    )
+
+def load_teams():
+    return pd.DataFrame(
+        query_db(
+            sql_engine,
+            "SELECT * FROM teams;",
+        ),
+    )
+
+games = load_games()
+teams = load_teams()
 
 if all(game["game_status"] == "3" for game in games):
     choice = st.segmented_control(
@@ -383,6 +389,17 @@ if choice == "All games":
             )
             for team in bye_teams:
                 st.subheader(team)
+    else:
+        tbd_ids = {-1, -2}
+        if st.session_state["update_schedule"]:
+            games = load_games()
+        missing_matchups = any(
+            game.get("home_team_id") in tbd_ids or game.get("away_team_id") in tbd_ids
+            for game in games
+        )
+        if missing_matchups:
+            st.error("One or more matchups are TBD pending the completion of the previous round. Update the standings once the matchups are determined.")
+        
 
     if st.session_state.get("roles", False) == "admin":  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
@@ -449,12 +466,12 @@ else:
         }
 
     # Process all games
-    games = games_df["game_id"].unique()
+    game_ids = games_df["game_id"].unique()
     game_summaries = [
         get_game_summary(
             games_df.loc[games_df["game_id"] == gid].reset_index(drop=True),
         )
-        for gid in games
+        for gid in game_ids
     ]
     summary_df = pd.DataFrame(game_summaries)
 
