@@ -138,7 +138,7 @@ def team_page(team_id: int) -> None:
             with cola:
                 try:
                     st.image(player["picture"], width=150)
-                except (TypeError, ValueError, OSError):
+                except (TypeError, ValueError, OSError, AttributeError):
                     st.image(team["logo"], width=150)
             with colb:
                 if st.button(player["name"], key=f"player_{player['player_id']}"):
