@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import Document
@@ -7,6 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from sources.sql import create_sql_engine, query_db
+from streamlit_server_state import no_rerun, server_state, server_state_lock
 
 import streamlit as st
 
@@ -166,6 +169,27 @@ if "messages" not in st.session_state:
 if "llms" not in st.session_state:
     st.session_state.llms = {}
 
+if "news_infos" not in server_state:
+    with no_rerun, server_state_lock["news_infos"]:
+        server_state["news_infos"] = {}
+if "faiss" not in server_state["news_infos"]:
+    with no_rerun, server_state_lock["news_infos"]:
+        server_state["news_infos"]["faiss"] = None
+        server_state["news_infos"]["faiss_updated"] = datetime(1970, 1, 1, tzinfo=timezone.utc) # dummy old date
+
+if "last_updated" not in server_state["news_infos"]:
+    with no_rerun, server_state_lock["news_infos"]:
+        latest_news = query_db(
+            sql_engine,
+            "SELECT published FROM news ORDER BY published DESC LIMIT 1;",
+        )
+        server_state["news_infos"] = {
+            "last_updated": datetime.strptime(
+                                "2026-01-25 20:23:39",
+                                "%Y-%m-%d %H:%M:%S"
+                            ).replace(tzinfo=timezone.utc)
+        }
+        
 # Display chat messages in a scrollable container
 st.divider()
 with st.container():
@@ -232,11 +256,17 @@ def display_topic_buttons() -> None:
         st.session_state.input_message = "Let's discuss some NFL glossary!"
 
     if st.session_state.selected_topic == "News":
-        if "vector_db" not in st.session_state.llms[st.session_state.selected_topic]:
+        if ("vector_db" not in st.session_state.llms[st.session_state.selected_topic]) or (server_state["news_infos"]["faiss_updated"] < server_state["news_infos"]["last_updated"]):
             with st.spinner("Studying latest news, please wait."):
-                st.session_state.llms[st.session_state.selected_topic]["vector_db"] = (
-                    build_news_vector_db()
-                )
+                if (not server_state["news_infos"]["faiss"]) or (server_state["news_infos"]["faiss_updated"] < server_state["news_infos"]["last_updated"]):
+                    st.session_state.llms[st.session_state.selected_topic]["vector_db"] = (
+                        build_news_vector_db()
+                    )
+                    with no_rerun, server_state_lock["news_infos"]:
+                        server_state["news_infos"]["faiss"] = st.session_state.llms[st.session_state.selected_topic]["vector_db"]
+                        server_state["news_infos"]["faiss_updated"] = datetime.now(timezone.utc)
+                else:
+                    st.session_state.llms[st.session_state.selected_topic]["vector_db"] = server_state["news_infos"]["faiss"]
         st.session_state.messages.append(
             {
                 "role": "assistant",

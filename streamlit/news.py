@@ -1,8 +1,12 @@
+from datetime import datetime, timezone
+
 from langchain.chains.base import Chain
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 from sources.sql import create_sql_engine, get_news, query_db
+from streamlit_server_state import no_rerun, server_state, server_state_lock
 
+import pandas as pd
 import streamlit as st
 
 sql_engine = create_sql_engine()
@@ -30,6 +34,21 @@ news = query_db(
     "SELECT * FROM news WHERE published >= NOW() - INTERVAL 7 DAY ORDER BY published DESC;",
 )
 
+if "news_infos" not in server_state:
+    with no_rerun, server_state_lock["news_infos"]:
+        server_state["news_infos"] = {}
+if "last_updated" not in server_state["news_infos"]:
+    with no_rerun, server_state_lock["news_infos"]:
+        latest_news = query_db(
+            sql_engine,
+            "SELECT published FROM news ORDER BY published DESC LIMIT 1;",
+        )
+        server_state["news_infos"] = {
+            "last_updated": datetime.strptime(
+                                "2026-01-25 20:23:39",
+                                "%Y-%m-%d %H:%M:%S"
+                            ).replace(tzinfo=timezone.utc)
+        }
 
 st.title("News Summarizer", anchor=False)
 
@@ -97,7 +116,10 @@ def update_news_fragment():
     if st.button("Update News"):
         with st.spinner(text="Loading latest news..."):
             get_news(sql_engine)
+            with no_rerun, server_state_lock["news_infos"]:
+                server_state["news_infos"]["last_updated"] = datetime.now(timezone.utc)
         st.toast("News updated.")
         st.rerun()
+    st.write("Last updated:", server_state["news_infos"]["last_updated"].strftime("%Y-%m-%d %H:%M:%S %Z"))
         
 update_news_fragment()
