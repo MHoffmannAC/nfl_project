@@ -18,12 +18,12 @@ def create_llm() -> Chain:
     summary_prompt = PromptTemplate(
         input_variables=["text", "style"],
         template=(
-            "Summarize the following text in such a way that it can be understood by a {style}, neither overwhelming the {style} nor boring the {style}:\n\n"
+            "Summarize the following text in such a way that it can be understood by a {style}. Answer such that it is neither overwhelming nor boring:\n\n"
             "Text: {text}\n\n"
             "Summary:"
         ),
     )
-    llm = ChatGroq(groq_api_key=st.secrets["GROQ_TOKEN"], model_name="gemma2-9b-it")
+    llm = ChatGroq(groq_api_key=st.secrets["GROQ_TOKEN"], model_name="llama-3.1-8b-instant")
     return summary_prompt | llm
 
 
@@ -68,41 +68,54 @@ if headline is not None:
     news_id = headline_to_id[headline]
     style = st.segmented_control(
         "Choose a target audience to decide how do present the news:",
-        ["NFL expert", "Normal person", "Child"],
+        ["NFL expert", "Normal person", "Child", "Custom"],
         default=None,
         selection_mode="single",
     )
     long_style = {
         "NFL expert": "'An NFL Expert who watches almost every game and is very familiar with the terminology and is particularly interested in statistics'",
-        "Normal person": "'And average person who might watch some games every now and then but besides that is not much involved with American Football or the NFL'",
+        "Normal person": "'An average person who might watch some games every now and then but besides that is not much involved with American Football or the NFL'",
         "Child": "'Five year old child who knows nothing about football but is super enthusiastic to learn, yet needs most american football related words explained in an easy understandable way by relating to kids topics'",
     }
 
-    if style is not None:
+    prompt = None
+    if style == "Custom":
+        prompt = st.text_input(
+            "Enter a custom style prompt for the summary (e.g., 'Shape your response targeted at a college student who watches football occasionally and enjoys learning about the sport'):",
+            placeholder="Shape your response targeted at a college student who watches football occasionally and enjoys learning about the sport",
+        )
+    elif style in long_style:
+        prompt = long_style[style]
+
+    if style and prompt:
         sql_column = {
             "NFL expert": "ai_expert",
             "Normal person": "ai_normal",
             "Child": "ai_child",
-        }[style]
+        }.get(style)
         st.markdown("---")
         st.subheader(headline, anchor=False)
-        ai_from_sql = query_db(
-            sql_engine,
-            f"SELECT {sql_column} FROM news WHERE news_id = :news_id;",  # noqa: S608
-            news_id=news_id,
-        )[0][sql_column]
+        if sql_column:
+            ai_from_sql = query_db(
+                sql_engine,
+                f"SELECT {sql_column} FROM news WHERE news_id = :news_id;",  # noqa: S608
+                news_id=news_id,
+            )[0][sql_column]
+        else:
+            ai_from_sql = None
         if ai_from_sql:
             styled_summary = ai_from_sql
         else:
             styled_summary = summary_chain.invoke(
-                {"text": story, "style": style},
+                {"text": story, "style": prompt},
             ).content
-            query_db(
-                sql_engine,
-                f"UPDATE news SET {sql_column} = :styled_summary WHERE news_id = :news_id;",  # noqa: S608
-                styled_summary=styled_summary,
-                news_id=news_id,
-            )
+            if sql_column:
+                query_db(
+                    sql_engine,
+                    f"UPDATE news SET {sql_column} = :styled_summary WHERE news_id = :news_id;",  # noqa: S608
+                    styled_summary=styled_summary,
+                    news_id=news_id,
+                )
 
         st.write(styled_summary)
     st.divider()
