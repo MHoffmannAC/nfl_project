@@ -687,6 +687,8 @@ def get_current_week() -> tuple[int, int, str]:
     week = events[0]["week"]["number"]
     season = events[0]["season"]["year"]
     game_type = events[0]["season"]["slug"]
+    if game_type == "post-season" and week == 4:
+        week = 5  # skip Pro Bowl and show Super Bowl instead
     return week, season, game_type
 
 
