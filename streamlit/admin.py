@@ -39,15 +39,16 @@ def _get_games_df(season, week, game_type):
     games_df = pd.DataFrame(games)
     games_df["date"] = (
         games_df["date"]
-        .dt.tz_localize('UTC')
+        .dt.tz_localize("UTC")
         .dt.tz_convert(st.session_state["user_timezone"])
     )
     return games_df
 
+
 @st.fragment
 def games_tile():
     st.header("Schedule")
-    
+
     display_df = _get_games_df(season, week, game_type)
     display_df["date"] = display_df["date"].dt.strftime("%a %m/%d/%y - %H:%M")
     status_map = {
@@ -59,7 +60,7 @@ def games_tile():
     display_df["status"] = display_df["status"].map(status_map)
     display = st.empty()
     display.dataframe(display_df, hide_index=True)
-    cola, colb, colc = st.columns([1,1.3,0.8])
+    cola, colb, colc = st.columns([1, 1.3, 0.8])
     with cola:
         if st.button("Update current week"):
             status = st.empty()
@@ -75,23 +76,35 @@ def games_tile():
                 status.error("Updating games!")
                 update_week(week, season, game_type, sql_engine)
                 games_df = _get_games_df(season, week, game_type)
-                earliest_game_time = pd.to_datetime(games_df.loc[~(games_df['status']=="3"), 'date']).min()
+                earliest_game_time = pd.to_datetime(
+                    games_df.loc[~(games_df["status"] == "3"), "date"]
+                ).min()
                 now_time = pd.Timestamp.now(tz=st.session_state["user_timezone"])
                 if pd.isna(earliest_game_time):
-                    games_df = _get_games_df(season, week+1, game_type)
-                    earliest_game_time = pd.to_datetime(games_df.loc[games_df['status'].isin(["1","2"]), 'date']).min()
+                    games_df = _get_games_df(season, week + 1, game_type)
+                    earliest_game_time = pd.to_datetime(
+                        games_df.loc[games_df["status"].isin(["1", "2"]), "date"]
+                    ).min()
                 display.dataframe(games_df, hide_index=True)
                 if now_time >= earliest_game_time:
                     status.error("Some games are running. Next update in 60 seconds.")
                     sleep(60)
                 else:
                     sleep_seconds = (earliest_game_time - now_time).total_seconds() + 60
-                    status.error(f"Next update on {(earliest_game_time + pd.Timedelta(seconds=60)).strftime('%A %m/%d/%Y at %H:%M')}")
-                    print(f"{now_time.strftime('%m/%d/%Y %H:%M')}   -   Next update on {(earliest_game_time + pd.Timedelta(seconds=60)).strftime('%A %m/%d/%Y at %H:%M')}")
+                    status.error(
+                        f"Next update on {(earliest_game_time + pd.Timedelta(seconds=60)).strftime('%A %m/%d/%Y at %H:%M')}"
+                    )
+                    print(
+                        f"{now_time.strftime('%m/%d/%Y %H:%M')}   -   Next update on {(earliest_game_time + pd.Timedelta(seconds=60)).strftime('%A %m/%d/%Y at %H:%M')}"
+                    )
                     sleep(sleep_seconds)
 
     with colc:
-        st.button("Update full schedule", on_click=update_full_schedule, args=(season, sql_engine))
+        st.button(
+            "Update full schedule",
+            on_click=update_full_schedule,
+            args=(season, sql_engine),
+        )
 
 
 @st.fragment
@@ -106,7 +119,8 @@ def news_tile():
         hide_index=True,
     )
     st.button("Fetch latest news", on_click=get_news, args=(sql_engine,))
-    
+
+
 @st.fragment
 def chat_tile():
     st.header("Chat")
@@ -119,6 +133,7 @@ def chat_tile():
         hide_index=True,
     )
 
+
 @st.cache_resource(show_spinner=False)
 def _download_logos(num_images) -> list[dict]:
     return query_db(
@@ -126,6 +141,7 @@ def _download_logos(num_images) -> list[dict]:
         "SELECT logo_id, image, team_id FROM logos ORDER BY logo_id DESC LIMIT :num_images;",
         num_images=num_images,
     )
+
 
 @st.fragment
 def logos_tile(num_images: int = 8):
@@ -151,6 +167,7 @@ def logos_tile(num_images: int = 8):
                 show_labels=False,
             )
 
+
 @st.fragment
 def feedback_tile():
     st.header("Feedback")
@@ -162,7 +179,8 @@ def feedback_tile():
         pd.DataFrame(feedback),
         hide_index=True,
     )
-    
+
+
 @st.fragment
 def user_tile():
     st.header("Users")
@@ -175,18 +193,19 @@ def user_tile():
         hide_index=True,
     )
 
+
 st.title("Admin Board", anchor=False)
 st.divider()
 
-col1, _, col2 = st.columns([1,0.2,1], gap = "large")
-with col1:            
+col1, _, col2 = st.columns([1, 0.2, 1], gap="large")
+with col1:
     games_tile()
 with col2:
     news_tile()
 
 st.divider()
 
-col1, _, col2 = st.columns([1,0.2,1], gap = "large")
+col1, _, col2 = st.columns([1, 0.2, 1], gap="large")
 with col1:
     chat_tile()
 with col2:
@@ -194,7 +213,7 @@ with col2:
 
 st.divider()
 
-col1, col2 = st.columns(2, gap = "large")
+col1, col2 = st.columns(2, gap="large")
 with col1:
     feedback_tile()
 with col2:

@@ -175,7 +175,12 @@ if "news_infos" not in server_state:
 if "faiss" not in server_state["news_infos"]:
     with no_rerun, server_state_lock["news_infos"]:
         server_state["news_infos"]["faiss"] = None
-        server_state["news_infos"]["faiss_updated"] = datetime(1970, 1, 1, tzinfo=timezone.utc) # dummy old date
+        server_state["news_infos"]["faiss_updated"] = datetime(
+            1970,
+            1,
+            1,
+            tzinfo=timezone.utc,
+        )  # dummy old date
 
 if "last_updated" not in server_state["news_infos"]:
     with no_rerun, server_state_lock["news_infos"]:
@@ -184,12 +189,9 @@ if "last_updated" not in server_state["news_infos"]:
             "SELECT published FROM news ORDER BY published DESC LIMIT 1;",
         )
         server_state["news_infos"] = {
-            "last_updated": datetime.strptime(
-                                "2026-01-25 20:23:39",
-                                "%Y-%m-%d %H:%M:%S"
-                            ).replace(tzinfo=timezone.utc)
+            "last_updated": latest_news[0]["published"].replace(tzinfo=timezone.utc),
         }
-        
+
 # Display chat messages in a scrollable container
 st.divider()
 with st.container():
@@ -256,17 +258,31 @@ def display_topic_buttons() -> None:
         st.session_state.input_message = "Let's discuss some NFL glossary!"
 
     if st.session_state.selected_topic == "News":
-        if ("vector_db" not in st.session_state.llms[st.session_state.selected_topic]) or (server_state["news_infos"]["faiss_updated"] < server_state["news_infos"]["last_updated"]):
+        if (
+            "vector_db" not in st.session_state.llms[st.session_state.selected_topic]
+        ) or (
+            server_state["news_infos"]["faiss_updated"]
+            < server_state["news_infos"]["last_updated"]
+        ):
             with st.spinner("Studying latest news, please wait."):
-                if (not server_state["news_infos"]["faiss"]) or (server_state["news_infos"]["faiss_updated"] < server_state["news_infos"]["last_updated"]):
-                    st.session_state.llms[st.session_state.selected_topic]["vector_db"] = (
-                        build_news_vector_db()
-                    )
+                if (not server_state["news_infos"]["faiss"]) or (
+                    server_state["news_infos"]["faiss_updated"]
+                    < server_state["news_infos"]["last_updated"]
+                ):
+                    st.session_state.llms[st.session_state.selected_topic][
+                        "vector_db"
+                    ] = build_news_vector_db()
                     with no_rerun, server_state_lock["news_infos"]:
-                        server_state["news_infos"]["faiss"] = st.session_state.llms[st.session_state.selected_topic]["vector_db"]
-                        server_state["news_infos"]["faiss_updated"] = datetime.now(timezone.utc)
+                        server_state["news_infos"]["faiss"] = st.session_state.llms[
+                            st.session_state.selected_topic
+                        ]["vector_db"]
+                        server_state["news_infos"]["faiss_updated"] = datetime.now(
+                            timezone.utc,
+                        )
                 else:
-                    st.session_state.llms[st.session_state.selected_topic]["vector_db"] = server_state["news_infos"]["faiss"]
+                    st.session_state.llms[st.session_state.selected_topic][
+                        "vector_db"
+                    ] = server_state["news_infos"]["faiss"]
         st.session_state.messages.append(
             {
                 "role": "assistant",

@@ -6,7 +6,6 @@ from langchain_groq import ChatGroq
 from sources.sql import create_sql_engine, get_news, query_db
 from streamlit_server_state import no_rerun, server_state, server_state_lock
 
-import pandas as pd
 import streamlit as st
 
 sql_engine = create_sql_engine()
@@ -23,7 +22,10 @@ def create_llm() -> Chain:
             "Summary:"
         ),
     )
-    llm = ChatGroq(groq_api_key=st.secrets["GROQ_TOKEN"], model_name="llama-3.1-8b-instant")
+    llm = ChatGroq(
+        groq_api_key=st.secrets["GROQ_TOKEN"],
+        model_name="llama-3.1-8b-instant",
+    )
     return summary_prompt | llm
 
 
@@ -44,10 +46,7 @@ if "last_updated" not in server_state["news_infos"]:
             "SELECT published FROM news ORDER BY published DESC LIMIT 1;",
         )
         server_state["news_infos"] = {
-            "last_updated": datetime.strptime(
-                                "2026-01-25 20:23:39",
-                                "%Y-%m-%d %H:%M:%S"
-                            ).replace(tzinfo=timezone.utc)
+            "last_updated": latest_news[0]["published"].replace(tzinfo=timezone.utc),
         }
 
 st.title("News Summarizer", anchor=False)
@@ -56,8 +55,9 @@ st.write(
     "Get a summary of the latest american football related news. Choose a news and a style.",
 )
 
+
 @st.fragment
-def news_summary_fragment():
+def news_summary_fragment() -> None:
     headline_to_story = {i["headline"]: i["story"] for i in news}
     headline_to_id = {i["headline"]: i["news_id"] for i in news}
     headline = st.selectbox(
@@ -76,14 +76,14 @@ def news_summary_fragment():
 
     if style == "Custom":
         custom_style = st.text_input(
-                "Enter a custom style prompt for the summary (e.g., 'Shape your response targeted at a college student who watches football occasionally and enjoys learning about the sport'):",
-                placeholder="Shape your response targeted at a college student who watches football occasionally and enjoys learning about the sport",
-            )
+            "Enter a custom style prompt for the summary (e.g., 'Shape your response targeted at a college student who watches football occasionally and enjoys learning about the sport'):",
+            placeholder="Shape your response targeted at a college student who watches football occasionally and enjoys learning about the sport",
+        )
 
     if headline is not None and not (style == "Custom" and not custom_style):
         story = headline_to_story[headline]
         news_id = headline_to_id[headline]
-        
+
         long_style = {
             "NFL expert": "'An NFL Expert who watches almost every game and is very familiar with the terminology and is particularly interested in statistics'",
             "Normal person": "'An average person who might watch some games every now and then but besides that is not much involved with American Football or the NFL'",
@@ -131,12 +131,14 @@ def news_summary_fragment():
         if st.toggle("Display original news"):
             st.write(story)
 
+
 news_summary_fragment()
 
 st.divider()
 
+
 @st.fragment
-def update_news_fragment():
+def update_news_fragment() -> None:
     if st.button("Update News"):
         with st.spinner(text="Loading latest news..."):
             get_news(sql_engine)
@@ -146,5 +148,6 @@ def update_news_fragment():
         st.rerun()
     st.markdown("Last updated:")
     st.write(server_state["news_infos"]["last_updated"].strftime("%Y-%m-%d %H:%M %Z"))
-        
+
+
 update_news_fragment()

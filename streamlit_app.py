@@ -127,11 +127,18 @@ def main() -> None:
                     title="User Login",
                     icon=":material/lock_open:",
                 ),
-            ] + ([st.Page(
-                    "streamlit/admin.py",
-                    title="Admin board",
-                    icon=":material/dataset:",
-                )] if st.session_state.get("roles", False) == "admin" else []),
+            ]
+            + (
+                [
+                    st.Page(
+                        "streamlit/admin.py",
+                        title="Admin board",
+                        icon=":material/dataset:",
+                    )
+                ]
+                if st.session_state.get("roles", False) == "admin"
+                else []
+            ),
         },
     )
 
