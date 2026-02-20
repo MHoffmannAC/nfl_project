@@ -14,9 +14,7 @@ from sources.sql import (
     query_db,
     update_full_schedule,
     update_running_game,
-    update_week,
 )
-from sqlalchemy.engine import Engine
 
 import streamlit as st
 
@@ -58,17 +56,26 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+
 @st.fragment
 def _admin_all_games() -> None:
     if st.session_state.get("roles", False) == "admin" and week_concluded:  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
             generate_game_stats_posts(season, inverse_week_mapping[week], games, teams)
 
+
 @st.fragment
-def _admin_top_games() -> None:            
+def _admin_top_games() -> None:
     if st.session_state.get("roles", False) == "admin" and week_concluded:  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
-            generate_top_games_posts(winners, season, inverse_week_mapping[week], games_df, teams)
+            generate_top_games_posts(
+                winners,
+                season,
+                inverse_week_mapping[week],
+                games_df,
+                teams,
+            )
+
 
 def _load_game(game_id: int) -> dict:
     game = query_db(
@@ -202,7 +209,7 @@ def _render_win_prob(
                     teams["team_id"] == game["away_team_id"],
                     "name",
                 ].to_numpy()[0],
-                postseason = (game_type == "post-season"),
+                postseason=(game_type == "post-season"),
             )
         else:
             st.write("")
@@ -310,7 +317,8 @@ with col3:
         st.session_state["update_schedule"] = True
         st.rerun()
 
-def load_games():
+
+def load_games() -> list[dict]:
     return query_db(
         sql_engine,
         "SELECT * FROM games WHERE season=:season AND week=:week AND game_type=:game_type ORDER BY date;",
@@ -319,13 +327,15 @@ def load_games():
         game_type=str(game_type),
     )
 
-def load_teams():
+
+def load_teams() -> pd.DataFrame:
     return pd.DataFrame(
         query_db(
             sql_engine,
             "SELECT * FROM teams;",
         ),
     )
+
 
 games = load_games()
 teams = load_teams()
@@ -410,8 +420,9 @@ if choice == "All games":
             for game in games
         )
         if missing_matchups:
-            st.error("One or more matchups are TBD pending the completion of the previous round. Update the standings once the matchups are determined.")
-        
+            st.error(
+                "One or more matchups are TBD pending the completion of the previous round. Update the standings once the matchups are determined.",
+            )
 
     _admin_all_games()
 else:
@@ -563,7 +574,7 @@ else:
                 teams.loc[teams["name"] == row["away_team"], "color"].to_numpy()[0],
                 row["home_team"],
                 row["away_team"],
-                postseason = (game_type == "post-season"),
+                postseason=(game_type == "post-season"),
             )
         with cols[1]:
             plot_points(
@@ -574,7 +585,7 @@ else:
                 teams.loc[teams["name"] == row["away_team"], "color"].to_numpy()[0],
                 row["home_team"],
                 row["away_team"],
-                postseason = (game_type == "post-season"),
+                postseason=(game_type == "post-season"),
             )
         st.divider()
 
