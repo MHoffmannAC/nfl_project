@@ -1,7 +1,7 @@
-from sources import hangman, pixellogo, ttt
-from streamlit.components.v1 import iframe
+from sources import hangman, pixellogo, rosterle, ttt
 
 import streamlit as st
+from streamlit.components.v1 import iframe
 
 st.title("Collection of NFL-themed Games", anchor=False)
 
@@ -12,6 +12,7 @@ game = st.segmented_control(
         "Hangman (Singleplayer)",
         "Sudoku (Singleplayer)",
         "PixelLogos (Multiplayer)",
+        "Rosterle",
     ],
     default=None,
 )
@@ -29,6 +30,8 @@ elif game == "PixelLogos (Multiplayer)":
     pixellogo.display_game()
 elif game == "Tic-Tac-Toe (1 vs. 1)":
     ttt.run_game()
+elif game == "Rosterle":
+    rosterle.run_game()
 else:
     st.header("Please select a game from the choices above", anchor=False)
     st.write("""**Available games**:
@@ -40,4 +43,6 @@ else:
  - **`Sudoku`**: Solve some NFL-themed Sudokus. (Singleplayer)
 
  - **`PixelLogo`**: Guess quicker than your opponents which logo is displayed. (Multiplayer)
+
+ - **`Rosterle`**: Guess the correct NFL player based on clues. (Multiplayer)
 """)

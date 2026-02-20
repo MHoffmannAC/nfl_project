@@ -1,5 +1,5 @@
-def query_plays(game_id):
-    query = f""" 
+def query_plays(game_id: int) -> str:
+    return f"""
             WITH play_stats AS (
                 SELECT
                     p.play_id,
@@ -41,51 +41,51 @@ def query_plays(game_id):
                     g.standing_away_overall_loss,
                     g.standing_away_home_loss,
                     g.standing_away_road_loss,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = TRUE THEN g.standing_home_overall_win
                         ELSE g.standing_away_overall_win
                     END AS standing_offense_overall_win,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = TRUE THEN g.standing_home_home_win
                         ELSE g.standing_away_home_win
                     END AS standing_offense_home_win,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = TRUE THEN g.standing_home_road_win
                         ELSE g.standing_away_road_win
                     END AS standing_offense_road_win,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = TRUE THEN g.standing_home_overall_loss
                         ELSE g.standing_away_overall_loss
                     END AS standing_offense_overall_loss,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = TRUE THEN g.standing_home_home_loss
                         ELSE g.standing_away_home_loss
                     END AS standing_offense_home_loss,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = TRUE THEN g.standing_home_road_loss
                         ELSE g.standing_away_road_loss
                     END AS standing_offense_road_loss,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = FALSE THEN g.standing_home_overall_win
                         ELSE g.standing_away_overall_win
                     END AS standing_defense_overall_win,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = FALSE THEN g.standing_home_home_win
                         ELSE g.standing_away_home_win
                     END AS standing_defense_home_win,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = FALSE THEN g.standing_home_road_win
                         ELSE g.standing_away_road_win
                     END AS standing_defense_road_win,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = FALSE THEN g.standing_home_overall_loss
                         ELSE g.standing_away_overall_loss
                     END AS standing_defense_overall_loss,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = FALSE THEN g.standing_home_home_loss
                         ELSE g.standing_away_home_loss
                     END AS standing_defense_home_loss,
-                    CASE 
+                    CASE
                         WHEN p.offenseAtHome = FALSE THEN g.standing_home_road_loss
                         ELSE g.standing_away_road_loss
                     END AS standing_defense_road_loss,
@@ -108,9 +108,9 @@ def query_plays(game_id):
                 FROM
                     nfl.plays p
                 LEFT JOIN nfl.games g ON p.game_id = g.game_id
-                LEFT JOIN nfl.teams t1 ON 
+                LEFT JOIN nfl.teams t1 ON
                     g.home_team_id = t1.team_id
-                LEFT JOIN nfl.teams t2 ON 
+                LEFT JOIN nfl.teams t2 ON
                     g.away_team_id = t2.team_id
                 WHERE
                     g.game_id = {game_id} AND p.playtype_id IN (3, 5, 6, 17, 18, 24, 26, 30, 34, 36, 37, 38, 40, 41, 51, 52, 59, 60, 67, 68)
@@ -122,52 +122,52 @@ def query_plays(game_id):
                     p1.sequenceNumber,
                     -- Completion Rate Calculation
                     (
-                        SELECT 
+                        SELECT
                             COUNT(*) * 1.0 / NULLIF(
-                                (SELECT COUNT(*) 
-                                FROM nfl.plays p2 
-                                WHERE p2.game_id = p1.game_id 
-                                AND p2.sequenceNumber < p1.sequenceNumber 
+                                (SELECT COUNT(*)
+                                FROM nfl.plays p2
+                                WHERE p2.game_id = p1.game_id
+                                AND p2.sequenceNumber < p1.sequenceNumber
                                 AND p2.playtype_id IN (67, 51, 24, 3, 6, 26, 36)), 0
                             )
                         FROM nfl.plays p2
-                        WHERE p2.game_id = p1.game_id 
-                        AND p2.sequenceNumber < p1.sequenceNumber 
+                        WHERE p2.game_id = p1.game_id
+                        AND p2.sequenceNumber < p1.sequenceNumber
                         AND (p2.playtype_id IN (67, 24)
                             OR (p2.playtype_id = 51 AND p2.description NOT LIKE '%incomplete%')
                         )
                     ) AS completionRate,
                     -- Pass to Rush Ratio Calculation
                     (
-                        SELECT 
+                        SELECT
                             COUNT(*) * 1.0 / NULLIF(
-                                (SELECT COUNT(*) 
-                                FROM nfl.plays p2 
-                                WHERE p2.game_id = p1.game_id 
-                                AND p2.sequenceNumber < p1.sequenceNumber 
+                                (SELECT COUNT(*)
+                                FROM nfl.plays p2
+                                WHERE p2.game_id = p1.game_id
+                                AND p2.sequenceNumber < p1.sequenceNumber
                                 AND p2.playtype_id IN (5, 68)), 0
                             )
                         FROM nfl.plays p2
-                        WHERE p2.game_id = p1.game_id 
-                        AND p2.sequenceNumber < p1.sequenceNumber 
+                        WHERE p2.game_id = p1.game_id
+                        AND p2.sequenceNumber < p1.sequenceNumber
                         AND p2.playtype_id IN (67, 51, 24, 3, 6, 26, 36)
                     ) AS passToRushRatio
                 FROM nfl.plays p1
                 LEFT JOIN nfl.games g ON p1.game_id = g.game_id
-                WHERE 
+                WHERE
                     g.game_id = {game_id}
             )
             SELECT ps.*, pa.completionRate, pa.passToRushRatio
             FROM play_stats ps
             JOIN play_aggregates pa ON ps.play_id = pa.play_id
-            ORDER BY 
+            ORDER BY
                 ps.play_id ASC
             """
-    return query
 
-def query_week(week, season, game_type):
-    query = f"""
-            SELECT 
+
+def query_week(week: int, season: int, game_type: str) -> str:
+    return f"""
+            SELECT
                 g.game_id, p.play_id, th.name as home_team, p.homeScore as home_score, p.awayScore as away_score, ta.name as away_team, pb.homeWinPercentage as home_wp, pb.awayWinPercentage as away_wp, TIME_TO_SEC(p.clock) +  (4-p.quarter ) * 15 * 60 as time_left
             FROM
                 probabilities pb
@@ -177,11 +177,31 @@ def query_week(week, season, game_type):
                 teams th ON th.team_id = g.home_team_id
                     JOIN
                 teams ta ON ta.team_id = g.away_team_id
-                    JOIN 
+                    JOIN
                 plays p ON p.sequenceNumber = pb.sequenceNumber AND p.game_id = pb.game_id
             WHERE
                 season = {season} AND week = {week} AND game_type = '{game_type}'
             ORDER BY
                 g.game_id, p.play_id;
             """
-    return query
+
+
+def query_players() -> str:
+    return """
+        select
+            CONCAT(pl.firstName, ' ', pl.lastName) AS player_name,
+            pl.jersey,
+            t.name as team_name,
+            t.logo,
+            ps.abbreviation as position,
+            CONCAT(d.conference, '\n', d.division) as division,
+            d.conference
+    from
+        players pl
+        INNER JOIN teams t ON pl.team_id = t.team_id
+        INNER JOIN positions ps ON pl.position_id = ps.position_id
+        INNER JOIN divisions d ON pl.team_id = d.team_id
+    where
+        pl.active = 1 AND
+        pl.status_id = 1;
+"""
