@@ -69,7 +69,7 @@ with SHARED["lock"]:
     if not SHARED["initialized"]:
         SHARED["players_df"] = get_players_data()
         if SHARED["players_df"] is not None:
-            SHARED["secret_idx"] = random.SystemRandom.choice(
+            SHARED["secret_idx"] = random.SystemRandom().choice(
                 SHARED["players_df"].index.tolist(),
             )
             SHARED["initialized"] = True
