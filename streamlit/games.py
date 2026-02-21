@@ -1,5 +1,3 @@
-from sources import hangman, pixellogo, rosterle, ttt
-
 import streamlit as st
 from streamlit.components.v1 import iframe
 
@@ -15,6 +13,7 @@ game = st.segmented_control(
         "Rosterle",
     ],
     default=None,
+    label_visibility ="collapsed",
 )
 
 if game == "Sudoku (Singleplayer)":
@@ -24,13 +23,21 @@ if game == "Sudoku (Singleplayer)":
     st.header("2024", anchor=False)
     iframe("https://sudokupad.app/xsk7whp4qz", height=800)
 elif game == "Hangman (Singleplayer)":
+    from sources import hangman
+
     hangman.run_game()
 elif game == "PixelLogos (Multiplayer)":
+    from sources import pixellogo
+
     pixellogo.initialize_game()
     pixellogo.display_game()
 elif game == "Tic-Tac-Toe (1 vs. 1)":
+    from sources import ttt
+
     ttt.run_game()
 elif game == "Rosterle":
+    from sources import rosterle
+
     rosterle.run_game()
 else:
     st.header("Please select a game from the choices above", anchor=False)

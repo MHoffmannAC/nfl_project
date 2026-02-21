@@ -13,38 +13,44 @@ from TikTokLive.events import CommentEvent, ConnectEvent, DisconnectEvent
 import streamlit as st
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
-# --------------------------------------------------
-# CONFIGURATION
-# --------------------------------------------------
-LEADERBOARD_DISPLAY_TIME = 20
-LOG_MAX_ENTRIES = 15
 MAX_GUESSERS_TO_SCORE = 5
-# --------------------------------------------------
-# SHARED MEMORY (don't use server_state to stay asynchronous safe)
-# --------------------------------------------------
-if "SHARED_MEMORY" not in globals():
-    globals()["SHARED_MEMORY"] = {
-        "guesses": [],
-        "tiktok_logs": [],
-        "secret_idx": None,
-        "players_df": None,
-        "tiktok_active": False,
-        "tiktok_running": False,
-        "initialized": False,
-        "lock": threading.Lock(),
-        "win_time": None,
-        "round_winner": None,
-        "leaderboard": {},
-    }
+LOG_MAX_ENTRIES = 20
+LEADERBOARD_DISPLAY_TIME = 20
 
-SHARED = globals()["SHARED_MEMORY"]
 
-if "rosterle" not in st.session_state:
-    st.session_state["rosterle"] = {
-        "username": None,
-        "admin_random_guess": False,
-        "admin_random_guess_time": 30,
-    }
+def state_inits() -> None:
+    if "shared_memory" not in globals():
+        globals()["shared_memory"] = {
+            "guesses": [],
+            "tiktok_logs": [],
+            "secret_idx": None,
+            "players_df": None,
+            "tiktok_active": False,
+            "tiktok_running": False,
+            "initialized": False,
+            "lock": threading.Lock(),
+            "win_time": None,
+            "round_winner": None,
+            "leaderboard": {},
+        }
+
+    if "rosterle" not in st.session_state:
+        st.session_state["rosterle"] = {
+            "username": None,
+            "admin_random_guess": False,
+            "admin_random_guess_time": 30,
+        }
+
+    shared = globals()["shared_memory"]
+
+    with shared["lock"]:
+        if not shared["initialized"]:
+            shared["players_df"] = get_players_data()
+            if shared["players_df"] is not None:
+                shared["secret_idx"] = random.SystemRandom().choice(
+                    shared["players_df"].index.tolist(),
+                )
+                shared["initialized"] = True
 
 
 def get_dynamic_font_size(name: str) -> str:
@@ -65,21 +71,12 @@ def get_players_data() -> pd.DataFrame | None:
         return None
 
 
-with SHARED["lock"]:
-    if not SHARED["initialized"]:
-        SHARED["players_df"] = get_players_data()
-        if SHARED["players_df"] is not None:
-            SHARED["secret_idx"] = random.SystemRandom().choice(
-                SHARED["players_df"].index.tolist(),
-            )
-            SHARED["initialized"] = True
-
-
 def add_log(msg: str) -> None:
-    with SHARED["lock"]:
-        SHARED["tiktok_logs"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
-        if len(SHARED["tiktok_logs"]) > LOG_MAX_ENTRIES:
-            SHARED["tiktok_logs"].pop(0)
+    shared = globals()["shared_memory"]
+    with shared["lock"]:
+        shared["tiktok_logs"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
+        if len(shared["tiktok_logs"]) > LOG_MAX_ENTRIES:
+            shared["tiktok_logs"].pop(0)
 
 
 def calculate_score(guess: dict, secret_jersey: int) -> int:
@@ -113,18 +110,19 @@ def process_guess(
         + (" (TikTok)" if is_tiktok else ""),
     )
 
-    with SHARED["lock"]:
-        if SHARED["win_time"] is not None:
+    shared = globals()["shared_memory"]
+    with shared["lock"]:
+        if shared["win_time"] is not None:
             return False
-        df = SHARED["players_df"]
+        df = shared["players_df"]
         if df is None:
             return False
 
-        secret = df.loc[SHARED["secret_idx"]]
+        secret = df.loc[shared["secret_idx"]]
 
         if any(
             g["player_name"].lower() == guess_name.lower().strip()
-            for g in SHARED["guesses"]
+            for g in shared["guesses"]
         ):
             return False
 
@@ -172,19 +170,20 @@ def process_guess(
                 for k in ["conference", "division", "team", "position", "jersey"]
             )
 
-            SHARED["guesses"].append(new_result)
+            shared["guesses"].append(new_result)
 
             if is_winner:
-                SHARED["win_time"] = time.time()
-                SHARED["round_winner"] = user_nick
+                shared["win_time"] = time.time()
+                shared["round_winner"] = user_nick
                 distribute_points()
             return True
     return False
 
 
 def distribute_points() -> None:
+    shared = globals()["shared_memory"]
     sorted_guesses = sorted(
-        SHARED["guesses"],
+        shared["guesses"],
         key=lambda x: (-x["score"], x["timestamp"]),
     )
     unique_users = []
@@ -198,8 +197,8 @@ def distribute_points() -> None:
             break
 
     for i, user in enumerate(unique_users):
-        SHARED["leaderboard"][user] = (
-            SHARED["leaderboard"].get(user, 0) + points_tier[i]
+        shared["leaderboard"][user] = (
+            shared["leaderboard"].get(user, 0) + points_tier[i]
         )
 
 
@@ -231,21 +230,24 @@ def start_tiktok_listener(unique_id: str, streamlit_ctx: object) -> None:
 
     @client.on(ConnectEvent)
     async def on_connect(_: ConnectEvent) -> None:
-        SHARED["tiktok_active"] = True
+        shared = globals()["shared_memory"]
+        shared["tiktok_active"] = True
         add_log(f"CONNECTED to @{unique_id}")
 
     @client.on(DisconnectEvent)
     async def on_disconnect(_: DisconnectEvent) -> None:
-        SHARED["tiktok_active"] = False
+        shared = globals()["shared_memory"]
+        shared["tiktok_active"] = False
         add_log("DISCONNECTED")
 
     async def runner() -> None:
-        SHARED["tiktok_running"] = True
+        shared = globals()["shared_memory"]
+        shared["tiktok_running"] = True
 
         try:
             await client.start()
 
-            while SHARED.get("tiktok_running", False):
+            while shared.get("tiktok_running", False):
                 await asyncio.sleep(0.5)
 
         finally:
@@ -266,7 +268,7 @@ def start_tiktok_listener(unique_id: str, streamlit_ctx: object) -> None:
 # UI
 # --------------------------------------------------
 def run_game() -> None:
-    st.set_page_config(page_title="NFL Rosterle", layout="centered")
+    state_inits()
 
     st.markdown(
         """
@@ -327,10 +329,11 @@ def run_game() -> None:
         with st.sidebar:
             st.header("TikTok Integration")
 
-            if not SHARED["tiktok_active"]:
+            shared = globals()["shared_memory"]
+            if not shared["tiktok_active"]:
                 tt_user = st.text_input("TikTok Username", key="tt_user_input")
                 if st.button("Connect Stream") and tt_user:
-                    SHARED["tiktok_running"] = True
+                    shared["tiktok_running"] = True
                     ctx = get_script_run_ctx()
                     t = threading.Thread(
                         target=start_tiktok_listener,
@@ -341,8 +344,8 @@ def run_game() -> None:
             else:
                 st.success("Connected!")
                 if st.button("Disconnect"):
-                    SHARED["tiktok_running"] = False
-                    SHARED["tiktok_active"] = False
+                    shared["tiktok_running"] = False
+                    shared["tiktok_active"] = False
                     st.rerun()
 
             st.divider()
@@ -351,7 +354,7 @@ def run_game() -> None:
             def sidebar_logs() -> None:
                 st.caption("📜 Guess and Tiktok Logs")
 
-                if not SHARED["tiktok_logs"]:
+                if not shared["tiktok_logs"]:
                     st.markdown(
                         """
                         <div style="
@@ -373,7 +376,7 @@ def run_game() -> None:
                     return
 
                 log_text = "\n".join(
-                    html.escape(x).strip() for x in reversed(SHARED["tiktok_logs"])
+                    html.escape(x).strip() for x in reversed(shared["tiktok_logs"])
                 )
 
                 st.markdown(
@@ -401,26 +404,27 @@ def run_game() -> None:
 
     @st.fragment(run_every=2)
     def display_board_fragment() -> None:
-        if SHARED["win_time"] is not None:
-            elapsed = time.time() - SHARED["win_time"]
+        shared = globals()["shared_memory"]
+        if shared["win_time"] is not None:
+            elapsed = time.time() - shared["win_time"]
             if elapsed >= LEADERBOARD_DISPLAY_TIME:
-                with SHARED["lock"]:
-                    SHARED["secret_idx"] = random.SystemRandom().choice(
-                        SHARED["players_df"].index.tolist(),
+                with shared["lock"]:
+                    shared["secret_idx"] = random.SystemRandom().choice(
+                        shared["players_df"].index.tolist(),
                     )
-                    SHARED["guesses"] = []
-                    SHARED["win_time"] = None
-                    SHARED["round_winner"] = None
+                    shared["guesses"] = []
+                    shared["win_time"] = None
+                    shared["round_winner"] = None
                 st.rerun()
 
-            secret_player = SHARED["players_df"].loc[SHARED["secret_idx"]]
+            secret_player = shared["players_df"].loc[shared["secret_idx"]]
             st.markdown(
                 f"""
                 <div class="reveal-box">
                     <div style="font-size: 0.7rem; color: #8b949e; text-transform: uppercase;">The Secret Player was</div>
                     <div style="font-size: 1.4rem; font-weight: 900; color: white;">{secret_player["player_name"]}</div>
                     <div style="font-size: 1.0rem; font-weight: 900; color: white;">{secret_player["position"]} for the {secret_player["team_name"]} ({secret_player["division"]})</div>
-                    <div style="font-size: 0.8rem; color: #3fb950; margin-top: 4px;">Guessed correctly by <b>{SHARED["round_winner"]}</b></div>
+                    <div style="font-size: 0.8rem; color: #3fb950; margin-top: 4px;">Guessed correctly by <b>{shared["round_winner"]}</b></div>
                 </div>
             """,
                 unsafe_allow_html=True,
@@ -431,10 +435,10 @@ def run_game() -> None:
                 unsafe_allow_html=True,
             )
             st.markdown("#### 🏆 GLOBAL STANDINGS")
-            sorted_lb = sorted(SHARED["leaderboard"].items(), key=lambda x: -x[1])[:10]
+            sorted_lb = sorted(shared["leaderboard"].items(), key=lambda x: -x[1])[:10]
             for i, (user, pts) in enumerate(sorted_lb):
                 if user not in ["admin", "anonymous"]:
-                    is_winner_row = user == SHARED["round_winner"]
+                    is_winner_row = user == shared["round_winner"]
                     st.markdown(
                         f"""
                     <div class="leaderboard-row">
@@ -468,7 +472,7 @@ def run_game() -> None:
             unsafe_allow_html=True,
         )
 
-        history = SHARED["guesses"]
+        history = shared["guesses"]
         if not history:
             for _ in range(6):
                 st.markdown(
@@ -526,9 +530,10 @@ def run_game() -> None:
 
     @st.fragment()
     def input_controls_fragment() -> None:
-        if SHARED["win_time"] is not None:
+        shared = globals()["shared_memory"]
+        if shared["win_time"] is not None:
             return
-        players_df = SHARED["players_df"]
+        players_df = shared["players_df"]
         current_user = st.session_state["rosterle"].get("username", "Unknown")
 
         def handle_submission() -> None:
@@ -572,15 +577,11 @@ def run_game() -> None:
 
             @st.fragment(run_every=random_guess_time)
             def random_guess_fragment() -> None:
-                if SHARED["win_time"] is not None:
+                if shared["win_time"] is not None:
                     return
-                players_df = SHARED["players_df"]
+                players_df = shared["players_df"]
                 if players_df is not None:
                     random_player = players_df.sample(1).iloc[0]["player_name"]
                     process_guess(random_player, user_nick="anonymous", is_tiktok=False)
 
             random_guess_fragment()
-
-
-if __name__ == "__main__":
-    run_game()
