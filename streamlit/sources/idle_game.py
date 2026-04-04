@@ -2,32 +2,54 @@ import streamlit as st
 import time
 import json
 import pandas as pd
-from sqlalchemy import MetaData, Table, Column, String, Integer, Text, TIMESTAMP, func, select, insert, update, delete, text
+from sqlalchemy import (
+    MetaData,
+    Table,
+    Column,
+    String,
+    Integer,
+    Text,
+    TIMESTAMP,
+    func,
+    select,
+    insert,
+    update,
+    delete,
+    text,
+)
 from sqlalchemy.orm import Session
 
 from sources.sql import create_sql_engine
+
 sql_engine = create_sql_engine()
 
 import streamlit.components.v1 as components
 
-def run_game():
 
+def run_game():
     metadata = MetaData()
 
     leaderboard_table = Table(
-        'leaderboard', metadata,
-        Column('user_id', Integer, primary_key=True),
-        Column('username', String(100), nullable=False),
-        Column('money', Integer, default=1000),
-        Column('fans', Integer, default=0),
-        Column('prestige_level', Integer, default=0),
+        "leaderboard",
+        metadata,
+        Column("user_id", Integer, primary_key=True),
+        Column("username", String(100), nullable=False),
+        Column("money", Integer, default=1000),
+        Column("fans", Integer, default=0),
+        Column("prestige_level", Integer, default=0),
     )
 
     save_data_table = Table(
-        'save_data', metadata,
-        Column('username', String(100), primary_key=True),
-        Column('state_json', Text, nullable=False),
-        Column('last_saved', TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
+        "save_data",
+        metadata,
+        Column("username", String(100), primary_key=True),
+        Column("state_json", Text, nullable=False),
+        Column(
+            "last_saved",
+            TIMESTAMP,
+            server_default=func.current_timestamp(),
+            onupdate=func.current_timestamp(),
+        ),
     )
 
     metadata.create_all(sql_engine)
@@ -38,16 +60,18 @@ def run_game():
 
         with Session(sql_engine) as session:
             # Save game state
-            stmt_save = insert(save_data_table).values(
-                username=username,
-                state_json=state_json
-            ).prefix_with("IGNORE")
+            stmt_save = (
+                insert(save_data_table)
+                .values(username=username, state_json=state_json)
+                .prefix_with("IGNORE")
+            )
 
             # Save leaderboard info
-            stmt_leader = insert(leaderboard_table).values(
-                username=username,
-                fans=fans
-            ).prefix_with("IGNORE")
+            stmt_leader = (
+                insert(leaderboard_table)
+                .values(username=username, fans=fans)
+                .prefix_with("IGNORE")
+            )
 
             session.execute(stmt_save)
             session.execute(stmt_leader)
@@ -55,19 +79,32 @@ def run_game():
 
     def load_progress(username):
         with Session(sql_engine) as session:
-            stmt = select(save_data_table.c.state_json).where(save_data_table.c.username == username)
+            stmt = select(save_data_table.c.state_json).where(
+                save_data_table.c.username == username
+            )
             result = session.execute(stmt).fetchone()
             return json.loads(result[0]) if result else None
 
     def reset_progress(username):
         with Session(sql_engine) as session:
-            session.execute(delete(save_data_table).where(save_data_table.c.username == username))
-            session.execute(delete(leaderboard_table).where(leaderboard_table.c.username == username))
+            session.execute(
+                delete(save_data_table).where(save_data_table.c.username == username)
+            )
+            session.execute(
+                delete(leaderboard_table).where(
+                    leaderboard_table.c.username == username
+                )
+            )
             session.commit()
 
     def show_leaderboard():
         with sql_engine.connect() as connection:
-            df = pd.read_sql(text("SELECT username, fans FROM leaderboard ORDER BY fans DESC LIMIT 10"), connection)
+            df = pd.read_sql(
+                text(
+                    "SELECT username, fans FROM leaderboard ORDER BY fans DESC LIMIT 10"
+                ),
+                connection,
+            )
         st.header("Leaderboard")
         st.table(df)
 
@@ -75,7 +112,11 @@ def run_game():
         total_income = 0
         for name in income_sources:
             if gs["managers"][name] > 0:
-                total_income += income_sources[name]["base_income"] * gs["income_items"][name]['level'] * manager_factor ** (gs["managers"][name] - 1)
+                total_income += (
+                    income_sources[name]["base_income"]
+                    * gs["income_items"][name]["level"]
+                    * manager_factor ** (gs["managers"][name] - 1)
+                )
         return total_income
 
     def update_game():
@@ -91,40 +132,96 @@ def run_game():
     if not username:
         st.stop()
 
-    base_prices = [25*7**i for i in range(11)]
+    base_prices = [25 * 7**i for i in range(11)]
 
     manager_factor = 3
 
     income_sources = {
-        "Hot Dog Stand": {"base_price": base_prices[0], "price_exp": 1.11, "base_income": 1, "cooldown": 5},
-        "Merch Store": {"base_price": base_prices[1], "price_exp": 1.15, "base_income": 4, "cooldown": 10},
-        "Tailgate Booth": {"base_price": base_prices[2], "price_exp": 1.2, "base_income": 16, "cooldown": 15},
-        "Fan Club": {"base_price": base_prices[3], "price_exp": 1.25, "base_income": 64, "cooldown": 20},
-        "Training Camp": {"base_price": base_prices[4], "price_exp": 1.3, "base_income": 256, "cooldown": 30},
-        "Junior League": {"base_price": base_prices[5], "price_exp": 1.35, "base_income": 1_024, "cooldown": 45},
-        "TV Deal": {"base_price": base_prices[6], "price_exp": 1.4, "base_income": 4_096, "cooldown": 60},
-        "Merch Megastore": {"base_price": base_prices[7], "price_exp": 1.45, "base_income": 16_384, "cooldown": 75},
-        "Stadium Expansion": {"base_price": base_prices[8], "price_exp": 1.5, "base_income": 65_536, "cooldown": 90},
-        "Global Tour": {"base_price": base_prices[9], "price_exp": 1.55, "base_income": 262_144, "cooldown": 120},
-        "NFL Team": {"base_price": base_prices[10], "price_exp": 1.55, "base_income": 262_144, "cooldown": 120},
-        
+        "Hot Dog Stand": {
+            "base_price": base_prices[0],
+            "price_exp": 1.11,
+            "base_income": 1,
+            "cooldown": 5,
+        },
+        "Merch Store": {
+            "base_price": base_prices[1],
+            "price_exp": 1.15,
+            "base_income": 4,
+            "cooldown": 10,
+        },
+        "Tailgate Booth": {
+            "base_price": base_prices[2],
+            "price_exp": 1.2,
+            "base_income": 16,
+            "cooldown": 15,
+        },
+        "Fan Club": {
+            "base_price": base_prices[3],
+            "price_exp": 1.25,
+            "base_income": 64,
+            "cooldown": 20,
+        },
+        "Training Camp": {
+            "base_price": base_prices[4],
+            "price_exp": 1.3,
+            "base_income": 256,
+            "cooldown": 30,
+        },
+        "Junior League": {
+            "base_price": base_prices[5],
+            "price_exp": 1.35,
+            "base_income": 1_024,
+            "cooldown": 45,
+        },
+        "TV Deal": {
+            "base_price": base_prices[6],
+            "price_exp": 1.4,
+            "base_income": 4_096,
+            "cooldown": 60,
+        },
+        "Merch Megastore": {
+            "base_price": base_prices[7],
+            "price_exp": 1.45,
+            "base_income": 16_384,
+            "cooldown": 75,
+        },
+        "Stadium Expansion": {
+            "base_price": base_prices[8],
+            "price_exp": 1.5,
+            "base_income": 65_536,
+            "cooldown": 90,
+        },
+        "Global Tour": {
+            "base_price": base_prices[9],
+            "price_exp": 1.55,
+            "base_income": 262_144,
+            "cooldown": 120,
+        },
+        "NFL Team": {
+            "base_price": base_prices[10],
+            "price_exp": 1.55,
+            "base_income": 262_144,
+            "cooldown": 120,
+        },
     }
-    
-    manager_levels = [10] + [i*25 for i in range(1,21)]
+
+    manager_levels = [10] + [i * 25 for i in range(1, 21)]
 
     if "game_state" not in st.session_state:
-        #saved = load_progress(username)
-        #st.session_state.game_state = saved if saved else {
+        # saved = load_progress(username)
+        # st.session_state.game_state = saved if saved else {
         st.session_state.game_state = {
             "money": 25,
             "total_money": 25,
             "fans": 0,
-            "income_items": {k: {"level": 0, "last_collected": 0} for k in income_sources},
+            "income_items": {
+                k: {"level": 0, "last_collected": 0} for k in income_sources
+            },
             "income_per_second": 0,
             "last_money_update": time.time(),
             "last_saved": time.time(),
             "prestige": 0,
-            "managers": {k: 0 for k in income_sources}
+            "managers": {k: 0 for k in income_sources},
         }
 
     gs = st.session_state.game_state
@@ -133,7 +230,7 @@ def run_game():
 
     # Top control buttons
     col1, col2, col3 = st.columns(3)
-    #if col1.button("💾 Save"):
+    # if col1.button("💾 Save"):
     #    save_progress(username, gs)
     #    st.success("Saved!")
 
@@ -145,7 +242,9 @@ def run_game():
             st.rerun()
 
     with col3.popover("🌟 Prestige"):
-        st.write("Reset progress and earn benefits for next season (currently not implemented)")
+        st.write(
+            "Reset progress and earn benefits for next season (currently not implemented)"
+        )
         if st.button("🌟 Prestige"):
             update_game()
             gained_fans = gs["total_money"] // 1000
@@ -161,9 +260,10 @@ def run_game():
     update_game()
 
     st.divider()
-    
+
     def display_counters_html(fontsize, height, sep):
-        return components.html(f"""
+        return components.html(
+            f"""
     <div id="money-display" style="
     font-size: {fontsize}px;
     font-weight: bold;
@@ -189,25 +289,35 @@ def run_game():
 
         setInterval(updateDisplay, 1000);
     </script>
-    """, height=height)
-    
-    display_counters_html(35,80,"   |   ")
+    """,
+            height=height,
+        )
+
+    display_counters_html(35, 80, "   |   ")
     with st.sidebar:
-        display_counters_html(20,150,"<br>")
+        display_counters_html(20, 150, "<br>")
 
     st.divider()
 
     # Income sources UI
-    cols = st.columns([3,1])
+    cols = st.columns([3, 1])
     cols[0].header("Income Sources")
-    buy_n_items = cols[1].segmented_control("Buy up to ... items:", ["1x", "5x", "10x", "25x", "Max"], default="1x", )
-    
+    buy_n_items = cols[1].segmented_control(
+        "Buy up to ... items:",
+        ["1x", "5x", "10x", "25x", "Max"],
+        default="1x",
+    )
+
     def display_income(name):
         if gs["managers"][name] == 0:
-            time_passed = time.time() - gs["income_items"][name]["last_collected"]      
+            time_passed = time.time() - gs["income_items"][name]["last_collected"]
             cooldown = income_sources[name]["cooldown"]
 
-            income = income_sources[name]["base_income"] * gs["income_items"][name]["level"] * cooldown
+            income = (
+                income_sources[name]["base_income"]
+                * gs["income_items"][name]["level"]
+                * cooldown
+            )
             if st.button(f"Collect **{income:,}$** from {name}", key=f"collect_{name}"):
                 if time_passed > cooldown:
                     gs["money"] += income
@@ -275,33 +385,50 @@ def run_game():
             animateProgressBar("bar1", {init_percent:.0f}, {cooldown});
             </script>
             """
-            
+
             components.html(html_code, height=40)
-    
+
     for name in gs["income_items"]:
-        price = round(income_sources[name]["base_price"] * (income_sources[name]["price_exp"] ** gs["income_items"][name]['level']))
-        if (price < 2 * gs["total_money"]):
-            income = income_sources[name]["base_income"] * (gs["income_items"][name]['level']) * manager_factor ** max(gs["managers"][name] - 1, 0)
+        price = round(
+            income_sources[name]["base_price"]
+            * (income_sources[name]["price_exp"] ** gs["income_items"][name]["level"])
+        )
+        if price < 2 * gs["total_money"]:
+            income = (
+                income_sources[name]["base_income"]
+                * (gs["income_items"][name]["level"])
+                * manager_factor ** max(gs["managers"][name] - 1, 0)
+            )
 
             st.subheader(f"**{name}** - Level: {gs['income_items'][name]['level']}")
             colA, colB, colC, colD = st.columns([1, 1, 1, 1], gap="large")
-            colA.write(f"Income: {income:,}/s  \n Next: {price:,}$ (+{income_sources[name]['base_income'] * manager_factor ** max(gs['managers'][name] - 1, 0)}/s income)")
+            colA.write(
+                f"Income: {income:,}/s  \n Next: {price:,}$ (+{income_sources[name]['base_income'] * manager_factor ** max(gs['managers'][name] - 1, 0)}/s income)"
+            )
 
             with colB:
-                if gs["income_items"][name]['level'] > 0 and gs["managers"][name] == 0:
+                if gs["income_items"][name]["level"] > 0 and gs["managers"][name] == 0:
                     display_income(name)
 
             if buy_n_items == "Max":
                 if colC.button(f"Buy {buy_n_items} {name}", key=f"buy_{name}"):
                     bought = 0
                     while True:
-                        price = round(income_sources[name]["base_price"] * (income_sources[name]["price_exp"] ** gs["income_items"][name]['level']))
+                        price = round(
+                            income_sources[name]["base_price"]
+                            * (
+                                income_sources[name]["price_exp"]
+                                ** gs["income_items"][name]["level"]
+                            )
+                        )
                         update_game()
                         if gs["money"] >= price:
                             gs["money"] -= price
-                            gs["income_items"][name]['level'] += 1
-                            st.toast(f"Upgraded {name} to level {gs['income_items'][name]['level']}!")
-                            if gs["income_items"][name]['level'] == 1:
+                            gs["income_items"][name]["level"] += 1
+                            st.toast(
+                                f"Upgraded {name} to level {gs['income_items'][name]['level']}!"
+                            )
+                            if gs["income_items"][name]["level"] == 1:
                                 gs["income_items"][name]["last_collected"] = time.time()
                             bought += 1
                         else:
@@ -315,14 +442,23 @@ def run_game():
                 buy_n_items_num = int(buy_n_items[:-1])
                 total_price = 0
                 for i in range(buy_n_items_num):
-                    total_price += round(income_sources[name]["base_price"] * (income_sources[name]["price_exp"] ** gs["income_items"][name]['level'] + i))
+                    total_price += round(
+                        income_sources[name]["base_price"]
+                        * (
+                            income_sources[name]["price_exp"]
+                            ** gs["income_items"][name]["level"]
+                            + i
+                        )
+                    )
                 if colC.button(f"Buy {buy_n_items} {name}", key=f"buy_{name}"):
                     update_game()
                     if gs["money"] >= total_price:
                         gs["money"] -= total_price
-                        gs["income_items"][name]['level'] += buy_n_items_num
-                        st.toast(f"Upgraded {name} to level {gs['income_items'][name]['level']}!")
-                        if gs["income_items"][name]['level'] == 1:
+                        gs["income_items"][name]["level"] += buy_n_items_num
+                        st.toast(
+                            f"Upgraded {name} to level {gs['income_items'][name]['level']}!"
+                        )
+                        if gs["income_items"][name]["level"] == 1:
                             gs["income_items"][name]["last_collected"] = time.time()
                         st.rerun()
                     else:
@@ -330,7 +466,7 @@ def run_game():
                 colC.write(f"needed: {total_price:,}$")
 
             if gs["managers"][name] == 0:
-                if gs["income_items"][name]['level'] >= manager_levels[0]:
+                if gs["income_items"][name]["level"] >= manager_levels[0]:
                     if colD.button(f"Hire Manager", key=f"mgr_{name}"):
                         gs["managers"][name] = 1
                         st.toast(f"Manager hired for {name}!")
@@ -338,16 +474,23 @@ def run_game():
                 else:
                     colD.write(f"Reach lvl. {manager_levels[0]} to hire manager!")
             else:
-                if gs["income_items"][name]['level'] >= manager_levels[gs["managers"][name]]:
-                    if colD.button(f"Improve Manager (income x{manager_factor})", key=f"mgr_{name}"):
+                if (
+                    gs["income_items"][name]["level"]
+                    >= manager_levels[gs["managers"][name]]
+                ):
+                    if colD.button(
+                        f"Improve Manager (income x{manager_factor})", key=f"mgr_{name}"
+                    ):
                         gs["managers"][name] += 1
                         st.toast(f"Manager hired for {name}!")
                         st.rerun()
                 else:
-                    colD.write(f"Reach lvl. {manager_levels[gs['managers'][name]]} to upgrade manager!")
+                    colD.write(
+                        f"Reach lvl. {manager_levels[gs['managers'][name]]} to upgrade manager!"
+                    )
 
     # Leaderboard & auto-save
-    #show_leaderboard()
-    #if time.time() - gs.get("last_saved", 0) > 300:
+    # show_leaderboard()
+    # if time.time() - gs.get("last_saved", 0) > 300:
     #    save_progress(username, gs)
     #    gs["last_saved"] = time.time()

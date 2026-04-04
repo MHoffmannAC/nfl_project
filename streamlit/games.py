@@ -11,6 +11,7 @@ game = st.segmented_control(
         "Sudoku (Singleplayer)",
         "PixelLogos (Multiplayer)",
         "Rosterle",
+        "Idle Game",
     ],
     default=None,
     label_visibility ="collapsed",
@@ -39,6 +40,10 @@ elif game == "Rosterle":
     from sources import rosterle
 
     rosterle.run_game()
+elif game == "Idle Game":
+    from sources import idle_game
+
+    idle_game.run_game()
 else:
     st.header("Please select a game from the choices above", anchor=False)
     st.write("""**Available games**:
