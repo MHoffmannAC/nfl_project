@@ -24,7 +24,7 @@ def create_llm() -> Chain:
     )
     llm = ChatGroq(
         groq_api_key=st.secrets["GROQ_TOKEN"],
-        model_name="llama-3.1-8b-instant",
+        model_name="openai/gpt-oss-20b",
     )
     return summary_prompt | llm
 

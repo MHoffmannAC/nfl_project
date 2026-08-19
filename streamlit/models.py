@@ -213,7 +213,7 @@ with st.expander("ChatBot"):
 The ChatBot is built using the Langchain framework and is powered by a large language model from Groq. Its core is a `ConversationalRetrievalChain` that can hold a conversation while also retrieving information from various sources.
 
 #### Core Components
-- **LLM:** The underlying large language model is `llama-3.3-70b-versatile` from `ChatGroq`.
+- **LLM:** The underlying large language model is `openai/gpt-oss-120b` from `ChatGroq`.
 - **Memory:** A `ConversationBufferMemory` allows the chatbot to remember previous messages and respond with greater context awareness.
 - **Knowledge Base:** The bot uses `HuggingFaceEmbeddings` and a `FAISS` vector store to efficiently manage and retrieve information from a variety of documents, including a glossary and the NFL rulebook.
 
@@ -228,7 +228,7 @@ The agent has access to several specialized sources to assist with queries:
             """
 llm = ChatGroq(temperature=0,
                groq_api_key=st.secrets['GROQ_TOKEN'],
-               model_name="llama-3.3-70b-versatile")
+               model_name="openai/gpt-oss-120b")
 
 chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
