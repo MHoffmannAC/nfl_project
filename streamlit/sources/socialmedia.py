@@ -510,8 +510,7 @@ def generate_game_stats_posts(year, week, games, teams_df):
     st.subheader("Social Media Posts")
     st.write("---")
 
-    if isinstance(week, str) and not week.isdigit()
-:
+    if isinstance(week, str) and not week.isdigit():
         year_week_text = f"Season {year}/{year + 1} - {week}"
         week_str = week
     else:
