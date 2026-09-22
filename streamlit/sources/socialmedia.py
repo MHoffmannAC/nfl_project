@@ -61,7 +61,7 @@ def create_image_from_stats(game, home_color, away_color, title, subtitle):
         details_font = ImageFont.truetype("Arimo-Regular.ttf", 40)
         score_font = ImageFont.truetype("Arimo-Regular.ttf", 60)
     except:
-        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        url = "https://raw.githubusercontent.com/googlefonts/Arimo/main/fonts/ttf/Arimo-Regular.ttf"
         r = requests.get(url)
         with open("Arimo-Regular.ttf", "wb") as f:
             f.write(r.content)
