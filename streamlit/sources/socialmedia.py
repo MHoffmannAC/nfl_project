@@ -203,7 +203,7 @@ def create_image_from_plots_and_text(title, subtitle, details, plot1_fig, plot2_
         subtitle_font = ImageFont.truetype("Arimo-Regular.ttf", 70)
         details_font = ImageFont.truetype("Arimo-Regular.ttf", 50)
     except:
-        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        url = "https://raw.githubusercontent.com/googlefonts/Arimo/main/fonts/ttf/Arimo-Regular.ttf"
         r = requests.get(url)
         with open("Arimo-Regular.ttf", "wb") as f:
             f.write(r.content)
@@ -272,7 +272,7 @@ def create_cover_image(image_path, title, subtitle):
         cover_font_main = ImageFont.truetype("Arimo-Regular.ttf", 75)
         cover_font_sub = ImageFont.truetype("Arimo-Regular.ttf", 55)
     except:
-        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        url = "https://raw.githubusercontent.com/googlefonts/Arimo/main/fonts/ttf/Arimo-Regular.ttf"
         r = requests.get(url)
         with open("Arimo-Regular.ttf", "wb") as f:
             f.write(r.content)
@@ -314,7 +314,7 @@ def create_info_image(image_path):
         info_font_sub = ImageFont.truetype("Arimo-Regular.ttf", 60)
         info_font_subsub = ImageFont.truetype("Arimo-Regular.ttf", 50)
     except:
-        url = "https://github.com/google/fonts/raw/refs/heads/main/apache/arimo/Arimo%5Bwght%5D.ttf"
+        url = "https://raw.githubusercontent.com/googlefonts/Arimo/main/fonts/ttf/Arimo-Regular.ttf"
         r = requests.get(url)
         with open("Arimo-Regular.ttf", "wb") as f:
             f.write(r.content)
