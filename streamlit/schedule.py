@@ -61,17 +61,18 @@ st.markdown(
 def _admin_all_games() -> None:
     if st.session_state.get("roles", False) == "admin" and week_concluded:  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
-            generate_game_stats_posts(season, inverse_week_mapping[week], games, teams)
-
+            week_val = inverse_week_mapping[week] if game_type == "post-season" else week
+            generate_game_stats_posts(season, week_val, games, teams)
 
 @st.fragment
 def _admin_top_games() -> None:
     if st.session_state.get("roles", False) == "admin" and week_concluded:  # noqa: SIM102
         if st.button("Generate Social Media Posts"):
+            week_val = inverse_week_mapping[week] if game_type == "post-season" else week
             generate_top_games_posts(
                 winners,
                 season,
-                inverse_week_mapping[week],
+                week_val,
                 games_df,
                 teams,
             )
